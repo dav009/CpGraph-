@@ -1,0 +1,342 @@
+
+/*
+ *  Main authors:
+ *     Gr�goire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Gr�goire Dooms (Universit� catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 10:57:21 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 271 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+// CUIDADO REVISAR IMPORTANTE LE PUSE A CADA BRANCHDESC const unsigned int a ese argumento en el constructor
+//por alguna razon al branchdesc doble ya tenia un argumento 0 en el lugar, no logro identifcar que indicaba
+#include <boost/utility.hpp>
+//using namespace boost;
+namespace Gecode { namespace Graph {
+
+/** \brief Graph Branching which selects a node or an arc to branch on, includes or excludes it.
+ *
+ * It is parametrized by a BoundsG : a class which must have a method
+ * pair<bool,GraphBD*> branch(Branching*); the bool must be false if no more branching is necessary
+ * otherwise it must be true and the GraphBD * points to a GraphBD.
+ *
+ * GraphBD should be GraphBDSimple or GraphBDMultiple.
+ * It must inherit from BranchingDesc and support the data members elem and action
+ * and the function members isNode and getNode.
+ *
+ *
+ * \ingroup TaskModelBranch
+ */
+
+template <class GView, class BoundsG, class GraphBD>
+class UnaryGraphBranching : public Branching {
+        protected:
+                GView g; ///< View to branch on
+                mutable GraphBD *bd; ///< BranchingDesc telling the next first alternative
+                /// Constructor for cloning \a b
+                UnaryGraphBranching(Space* home, bool share, UnaryGraphBranching& b);
+        public:
+                /// Constructor for creation
+                UnaryGraphBranching(Space* home, GView &g);
+                /// Perform branching (selects view)
+                /*!
+                 * Update Gecode 2.1.1
+                 * this function was introduced in gecode 2.1.1, it is similar to the old
+                 * function branch in gecode 1.0.0.
+                 * This function returns true if there is a branching alternative.
+                 * The old one return a number telling the number of branching alternatives.
+                 *
+                 * This function was highly changed
+                 * */
+                virtual bool  status(const Space*) const;
+                /// Return branching description (of type Gecode::Graph::GraphBDSingle)
+                /*!
+                 * Used by batchrecomputation
+                 * */
+                virtual const BranchingDesc* description(const Space *home) const;
+                /// Perform commit for alternative \a a and branching description \a d
+
+                virtual ExecStatus commit(Space* home,const BranchingDesc* d, unsigned int a);
+                /// Perform cloning
+                virtual Actor* copy(Space* home, bool share);
+};
+
+/**
+ * \brief Single-type Graph %Branching descriptions
+ *
+ * It stores a value of type Type  and
+ * it stores wether it must be included or excluded
+ *
+ * This can be used to implement Arcs-only Branchings or Nodes-only Branchings
+ *
+ * Type should be either int or pair<int,int>
+ *
+ * \ingroup TaskModelBranch
+ */
+template <class Type>
+struct GraphBDSingle : public BranchingDesc {
+        typedef Type type; ///< int if a node, pair<int,int> if an arc
+        const Type elem; ///< the arc or node id
+        const bool action; ///< true is include and false is exclude
+        /// Initialize decsription
+        // REVISAR AGREGE el argumento a
+        //GraphBDSingle(Branching*,Type,bool,const unsigned int a);
+
+        /// Initialize empty
+        GraphBDSingle(const Branching*,Type val,bool inc);
+
+        GraphBDSingle(const Branching*);
+        /// Initialize decsription
+
+
+        /// Report size occupied
+        virtual size_t size(void) const;
+        /// \brief Returns the node
+        ///
+        /// isNode() must return true, otherwise an assertion Error will occur
+        int getNode(void) const;
+        /// tells if the value is a Node (otherwise it is an arc)
+        bool isNode(void) const;
+
+       GraphBDSingle<Type>* clone(const Branching* b) const;
+};
+
+/**
+ * \brief Multiple-type Graph %Branching descriptions
+ *
+ * It might be storing either an arc or a node and
+ * it stores wether it must be included or excluded
+ *
+ * This should be used only to implement Arcs and Nodes Branchings
+ * \ingroup TaskModelBranch
+ *
+ */
+struct GraphBDMultiple : public BranchingDesc {
+        const pair<int,int> elem; ///< the arc or node id
+        const bool type; ///< true if an arc, false if a node
+        const bool action; ///< true is include and false is exclude
+        /// Initialize decsription with a node
+        // REVISAR AGREGE el argumento a
+        GraphBDMultiple(const Branching*);
+        /// Initialize decsription with a node
+        GraphBDMultiple(const Branching*,int,bool);
+        /// Initialize decsription with an arc
+        GraphBDMultiple(const Branching*,pair<int,int>,bool);
+        /// \brief Returns the node
+        ///
+        /// isNode() must return true, otherwise an assertion Error will occur
+        int getNode(void) const;
+        /// tells if the value is a Node (otherwise it is an arc)
+        bool isNode(void) const ;
+        /// Report size occupied
+        virtual size_t size(void) const;
+       GraphBDMultiple* clone(const Branching* b) const;
+};
+//@}
+
+//       const BoundsG bg(*const_cast<GView*>(&g));
+//        pair<bool,GraphBD*> res =
+//        	bg.branch(const_cast<UnaryGraphBranching<GView,BoundsG,GraphBD> * >(this));
+//        if (! res.first) return false;
+//        //bd = res.second;
+//        return true;
+
+/**
+ * Graph Branching descriptions storing an arc or node and wether it must be included or excluded
+ *
+ * \ingroup TaskModelBranch
+ */
+
+
+template <class Type>
+        forceinline
+GraphBDSingle<Type>::GraphBDSingle(const Branching* b, Type val, bool inc)
+        : BranchingDesc(b,2), elem(val), action(inc) {
+        }
+
+template <class Type>
+     forceinline
+GraphBDSingle<Type>::GraphBDSingle(const Branching * b)
+        : BranchingDesc(b,1), elem(), action(false) { }
+
+
+
+template <class Type>
+        forceinline GraphBDSingle<Type> *
+GraphBDSingle<Type>::clone(const Branching* b) const{
+        return new GraphBDSingle<Type>(b, elem, action);
+        }
+
+
+template <class Type>
+size_t
+GraphBDSingle<Type>::size(void) const {
+        return sizeof(GraphBDSingle<Type>);
+}
+template <>
+bool
+GraphBDSingle<int>::isNode(void) const {
+        return true;
+}
+template <>
+bool
+GraphBDSingle<pair<int,int> >::isNode(void) const {
+        return false;
+}
+template <>
+int
+GraphBDSingle<int>::getNode(void) const {
+        return elem;
+}
+template <>
+int
+GraphBDSingle<pair<int,int> >::getNode(void) const {
+        assert(false);
+        return 0;
+}
+
+/**
+ * Graph Branching descriptions storing an arc or node and wether it must be included or excluded first
+ *
+ * \ingroup TaskModelBranch
+ */
+
+forceinline
+GraphBDMultiple::GraphBDMultiple(const Branching* b)
+       : BranchingDesc(b,1), elem(make_pair(-1000,-1000)), type(false), action(false) { }
+
+       forceinline
+GraphBDMultiple::GraphBDMultiple(const Branching* b, int node, bool inc)
+       : BranchingDesc(b,2), elem(make_pair(node,-1000)), type(false), action(inc) {
+       }
+
+       forceinline
+GraphBDMultiple::GraphBDMultiple(const Branching* b, pair<int,int> val, bool inc)
+       : BranchingDesc(b,2), elem(val), type(true), action(inc) {
+       }
+
+size_t
+GraphBDMultiple::size(void) const {
+        return sizeof(GraphBDMultiple);
+}
+
+bool GraphBDMultiple::isNode() const {
+        return !type;
+}
+
+int GraphBDMultiple::getNode() const{
+        assert(isNode());
+        return elem.first;
+}
+
+
+
+
+forceinline GraphBDMultiple *
+GraphBDMultiple::clone(const Branching* b) const{
+if (isNode()){
+    return new GraphBDMultiple(b, elem.first, action);
+} else {
+    return new GraphBDMultiple(b, elem, action);
+}
+}
+
+/**
+ * Graph Branching which selects a node or an arc to branch on, includes or excludes it.
+ *
+ * \ingroup TaskModelBranch
+ */
+
+template <class GView, class BoundsG, class GraphBD>
+forceinline
+UnaryGraphBranching<GView,BoundsG,GraphBD>::UnaryGraphBranching
+(Space* home, GView &g) : Branching(home), g(g),bd(NULL){
+
+	// std::cout<<"branching unario"<<std::endl;
+}
+
+
+template <class GView, class BoundsG, class GraphBD>
+forceinline
+        UnaryGraphBranching<GView,BoundsG,GraphBD>::UnaryGraphBranching
+(Space* home, bool share, UnaryGraphBranching& b)
+        : Branching(home,share,b),bd(NULL){
+	// std::cout<<"act branching unario"<<std::endl;
+                g.update(home,share,b.g);
+        }
+
+template <class GView, class BoundsG, class GraphBD>
+Actor*
+        UnaryGraphBranching<GView,BoundsG,GraphBD>::copy(Space* home, bool share) {
+                return new (home)
+                        UnaryGraphBranching<GView,BoundsG,GraphBD>(home,share,*this);
+        }
+
+//cambie esta para que retornara true o false... REVISAR IMPORTANTE
+//cuidado esta solo retorna si existen o no alternativas. NO HACE BRANCHING..
+template <class GView, class BoundsG, class GraphBD>
+ bool
+UnaryGraphBranching<GView,BoundsG,GraphBD>::status (const Space* home)const {
+     //CUIDADO REVISAR..hize el const cast
+
+	//original era BoundsG bg(g);
+
+    if ( g.assigned()) return false;
+      BoundsG bg(*const_cast<GView*>(&g));
+    pair<bool,GraphBD*> res = bg.branch(this);
+    if (! res.first) return false;
+    if (bd) delete bd;
+    bd = res.second;
+    return true;
+}
+
+template <class GView, class BoundsG, class GraphBD>
+const BranchingDesc*
+UnaryGraphBranching<GView,BoundsG,GraphBD>::description(const Space *home) const {
+
+//	std::cout<<"what?"<<std::endl;
+//	 	const BoundsG bg(*const_cast<GView*>(&g));
+//        pair<bool,GraphBD*> res =
+//        	bg.branch(const_cast<UnaryGraphBranching<GView,BoundsG,GraphBD> *>(this));
+//        return res.second;
+	 return bd->clone(this);
+}
+
+template <class GView, class BoundsG, class GraphBD>
+ExecStatus
+UnaryGraphBranching<GView,BoundsG,GraphBD>::commit
+(Space* home,const BranchingDesc* d, unsigned int a) {
+
+	// Revisar agrege el auxiliar para destruir el problema con el casting de const REVISAR IMPORTANTE
+	const GraphBD* lbd = static_cast<const GraphBD*>(d);
+        if (!lbd){
+                lbd = bd;
+        }
+        ModEvent me;
+        if (lbd->isNode()){
+                int n = lbd->getNode();
+                if ((a==1)^lbd->action) {me = g._nodeIn(home,n);}
+                else {me = g._nodeOut(home,n);}
+        } else {
+                int t,h;
+                boost::tie(t,h) = lbd->elem;
+                if ((a==1)^lbd->action) {me = g._arcIn(home,t,h);}
+                else {me = g._arcOut(home,t,h);}
+        }
+        return me_failed(me) ? ES_FAILED : ES_OK;
+}
+
+template<class GView, class BoundsG>
+void branch(Space * home, GView &g){
+        (void) new (home) UnaryGraphBranching<GView, BoundsG, typename BoundsG::GraphBD>(home,g);
+};
+} }

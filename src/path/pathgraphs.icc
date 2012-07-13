@@ -1,0 +1,341 @@
+
+/*
+ *  Main authors:
+ *     Gr�goire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Gr�goire Dooms (Universit� catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 10:57:21 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 271 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+//REVISAR CAMBIE EL INCLUDE original: #include "graph.hh"
+#include "graph.hh"
+#include <list>
+#include <vector>
+#include <utility>
+#include <boost/utility.hpp>
+#include <boost/graph/strong_components.hpp>
+#include <boost/graph/graphviz.hpp>
+#include <boost/graph/graph_utility.hpp>
+#include <boost/graph/topological_sort.hpp>
+#include <boost/graph/depth_first_search.hpp>
+#include <boost/graph/visitors.hpp>
+#include <boost/property_map.hpp>
+#include <boost/graph/reverse_graph.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <boost/graph/iteration_macros.hpp>
+#include <boost/tuple/tuple.hpp>
+//using namespace boost;
+//using namespace std;
+
+namespace Gecode { namespace Graph {
+
+/** \brief  BoundsGraphs datastructure for the path propagator
+ *
+ * \relates PathPropag PathCostPropag*/
+template <class GDV>
+class PathBoundsGraphs : public BoundsGraphs<GDV> {
+//TODO : Still missing the lower bound propagation
+        using BoundsGraphs<GDV>::UB;
+        using BoundsGraphs<GDV>::LB;
+        using BoundsGraphs<GDV>::UB_v;
+        using BoundsGraphs<GDV>::LB_v;
+        using BoundsGraphs<GDV>::numNodes;
+        using BoundsGraphs<GDV>::arcOut;
+        using BoundsGraphs<GDV>::nodeOut;
+      public:
+        using BoundsGraphs<GDV>::resetVertexIndexUB;
+        using BoundsGraphs<GDV>::resetEdgeIndexUB;
+        PathBoundsGraphs(GDV &g);
+        ExecStatus SCC_filtering(Space* home, int start, int end);
+        boost::tuple<ExecStatus,int,int> cost_filtering(Space* home, int sourceID, int targetID, const map <pair<int,int>,int> &edgecosts ,int uppercost);
+};
+
+        /// Builds a PathBoundsGraphs from the current domain of a Graph View of type GDV
+        template <class GDV>
+        PathBoundsGraphs<GDV>::PathBoundsGraphs(GDV &g): BoundsGraphs<GDV>(g){}
+
+/** \brief  Topological propagation for the path constraint
+ *
+ *  Enforces the graph to be a simply connected component:
+ *  all nodes must be reachable from the source
+ *
+ *  Checks the nodes in LB are all in same CC of UB.
+ *  Removes the other components of UB.
+ *
+ *  Checks the nodes in UB are part of a single SCC if a back edge is added
+ *  --> intersection of nodes reachable from source and nodes that can be reached from end
+ *
+ *  Check no two LB nodes are in parallel branches of the condensed graph (== DAG)
+ */
+template <class GDV>
+ExecStatus PathBoundsGraphs<GDV>::SCC_filtering(Space* home, int sourceID, int targetID){
+
+
+        // std::map<Gecode::Graph::Graph::vertex_descriptor, default_color_type> color;
+        Gecode::Graph::Graph::vertex_descriptor s = UB_v[sourceID];
+        boost::dfs_visitor<boost::null_visitor> t;
+        // YYY replace this map with a vector and use iterator_property_map with Node::index
+        typedef std::map<Gecode::Graph::Graph::vertex_descriptor,boost::default_color_type> CMT;
+        CMT v2c;
+        boost::associative_property_map<CMT> cmap(v2c);
+        Gecode::Graph::Graph::vertex_iterator vi,vi_end, next;
+        boost::tie(vi,vi_end) = vertices(UB);
+        for (;vi!=vi_end; ++vi){
+                cmap[*vi]=boost::white_color;
+        }
+        boost::depth_first_visit(UB,s,t, cmap);
+        boost::tie(vi,vi_end) = vertices(UB);
+        TRACE(cout << "depth_first_done "<< num_vertices(UB) << " nodes in UB" << endl);
+        int cnodes = 0;
+        for (next = vi; vi != vi_end; vi = next) {
+                ++next;
+                ++cnodes;
+                TRACE(cout << get(cmap,*vi) );
+                if (get(cmap,*vi) == boost::white_color){
+                        TRACE(cout <<"UB node "<< UB[*vi].id << " is still white"<<endl);
+                        if (LB_v[UB[*vi].id]){
+                                TRACE(cout << "It is also in LB"<<endl);
+                        }
+                        GECODE_ME_CHECK(nodeOut(home,UB[*vi].id));
+
+                }
+        }
+        TRACE(cout << cnodes << "nodes processed, single_cc done proceeding with cambazard"<<endl);
+        // cambazard :
+        // Step 1 add a back edge and prune everything out the SCC then remove back edge.
+        // Step 2 Compute condensed graph CG. CG is a DAG. On CG, if a node is parallel to a
+        // kernel node remove it.
+
+        // Step 1
+        Gecode::Graph::Graph::edge_descriptor e_tmp;
+        bool b;
+        boost::tie(e_tmp,b) = add_edge(UB_v[targetID], UB_v[sourceID], UB);
+
+        // YYY replace this map with a vector and use iterator_property_map with Node::index
+        typedef std::map<Gecode::Graph::Graph::vertex_descriptor,Gecode::Graph::Graph::vertices_size_type> CN;
+        CN v2comp;
+        boost::associative_property_map<CN> compmap(v2comp);
+
+        resetVertexIndexUB();
+        boost::strong_components(UB,compmap,vertex_index_map(get(&Node::index, UB)));
+        Gecode::Graph::Graph::vertices_size_type good_comp = compmap[UB_v[sourceID]];
+        boost::tie(vi,vi_end) = vertices(UB);
+        for (next = vi; vi != vi_end; vi = next) {
+                ++next;
+                if (compmap[*vi] != good_comp){
+                        TRACE(cout << "node "<< UB[*vi].id  << " is in comp "<< compmap[*vi] << " instead of comp " << good_comp << endl);
+                        GECODE_ME_CHECK(nodeOut(home,UB[*vi].id));
+                }
+        }
+        remove_edge(e_tmp,UB);
+        resetVertexIndexUB();
+        v2comp.clear();
+        int numcomp = boost::strong_components(UB,compmap,vertex_index_map(get(&Node::index, UB)));
+
+        TRACE(cout << "numcomp = " << numcomp << endl);
+        //Build the reduced graph using the info in compmap
+        typedef boost::adjacency_list<boost::vecS, boost::setS, boost::directedS, boost::property<boost::vertex_index_t, std::size_t>, boost::no_property> RGraph;
+        TRACE(cout << "indexes: ");
+        RGraph RG(numcomp);
+        vector<RGraph::vertex_descriptor> comp2Rv(numcomp);
+        RGraph::vertex_iterator rvi,rvi_end;
+        boost::tie(rvi,rvi_end) = vertices(RG);
+        // rnode descr-> rnode id
+        boost::property_map<RGraph, boost::vertex_index_t>::type rd2id = get(boost::vertex_index, RG);
+        int i = 0;
+        for (;rvi!=rvi_end; ++rvi, ++i){
+                comp2Rv[i]=*rvi;
+                rd2id[*rvi]=i;
+                TRACE(cout << i << " ");
+        }
+        assert(rvi==rvi_end && i==numcomp);
+        boost::tie(vi,vi_end) = vertices(UB);
+        std::vector< std::list<int> > compnodes(numcomp); // rnode_id->list of component node UB id
+        for (;vi!=vi_end; ++vi){
+                compnodes[compmap[*vi]].push_back(UB[*vi].id);
+        }
+
+
+        TRACE(cout << endl);
+        //edges
+        Gecode::Graph::Graph::edge_iterator ei,ei_end;
+        boost::tie(ei,ei_end) = edges(UB);
+        for (;ei!=ei_end; ++ei){
+                if (compmap[source(*ei,UB)] != compmap[target(*ei,UB)]){
+                        TRACE(cout << "add_Edge "<<compmap[source(*ei,UB)]<<" "<< compmap[target(*ei,UB)] << endl);
+                        add_edge(comp2Rv[compmap[source(*ei,UB)]],
+                                        comp2Rv[compmap[target(*ei,UB)]], RG);
+                }
+        }
+
+        //RG is built, now do a topological sort on it and remove the vertices
+        typedef std::vector< RGraph::vertex_descriptor > TO_C;
+        TO_C toporder; // vector with topol sorted rnode desc.
+        toporder.reserve(numcomp);
+        TRACE(cout << "reduced_graph top. order:" << endl);
+        //TRACE(write_graphviz(cout,RG));
+
+        boost::topological_sort(RG, std::back_inserter(toporder));
+
+        std::vector<int> UBn_order(numNodes);// for each UBid  -> index in topol
+        //compute the topological order of the nodes in UB
+        //store the indice in the UBn_order vector
+        TO_C::iterator rd_i=toporder.begin();
+        for (int j=0; rd_i!=toporder.end(); ++rd_i, ++j){
+                TRACE(cout << *rd_i << " -> ");
+                TRACE(cout << rd2id[*rd_i] << "\n");
+                for (list<int>::iterator n=compnodes[rd2id[*rd_i]].begin();
+                                n!=compnodes[rd2id[*rd_i]].end(); ++n){
+                        UBn_order[*n]=j;
+                }
+        }
+        TRACE(cout << endl);
+
+
+
+        int last_kernel_node_index=0, next_knid=0;
+        //for all nodes in rgraph starting from the sink up to the source
+        for (rd_i=toporder.begin(); rd_i!=toporder.end(); ++rd_i){
+                // for all real UB node associated to the rnode
+                bool chng_knid = false;
+                for (list<int>::iterator UBid_i = compnodes[rd2id[*rd_i]].begin();
+                                UBid_i!=compnodes[rd2id[*rd_i]].end(); ++UBid_i  ){
+                        // list of edges to be removed (removing an edge invalidates all edge iterators)
+                        std::list<std::pair<int,int> > remove;
+
+                        Gecode::Graph::Graph::adjacency_iterator av,av_end,next;
+                        boost::tie(av,av_end) = adjacent_vertices(UB_v[*UBid_i],UB);
+
+                        // for all out neighbor of this node in UB.
+                        for (next=av; av != av_end ; av=next){
+                                ++next;
+                                //If an edge jumps over the last encountered kern node, remove the edge.
+                                if(UBn_order[UB[*av].id] < last_kernel_node_index){
+                                        TRACE(cout<<"arc "<<*UBid_i<<" "<<UB[*av].id<<" jumps over last kern node"<<endl);
+                                        remove.push_back(make_pair(*UBid_i,UB[*av].id));
+                                }
+                        }
+                        for (list<pair<int,int> >::iterator r=remove.begin(); r!=remove.end(); ++r){
+                                TRACE(cout << "removing edge " << r->first << " "<<r->second <<endl);
+                                GECODE_ME_CHECK(arcOut(home,r->first,r->second));
+                        }
+
+                        // if the real node is a kernel node then update last_kernel_node_index.
+                        if (LB_v[*UBid_i]){
+                                TRACE(cout <<*UBid_i<< " is kernel of order "<<UBn_order[*UBid_i] << endl);
+                                chng_knid = true;
+                                next_knid = UBn_order[*UBid_i];
+                        }
+
+                }
+                if (chng_knid) {
+                        last_kernel_node_index = next_knid;
+                }
+        }
+
+        TRACE(cout << endl);
+        return ES_OK;
+}
+//#include <dijkstra_shortest_paths_old.hpp> // found a bug in boost.graph 1.33 this is 1.32 version/bugfree
+
+
+/** \brief  Removes arcs from the upper bound according to cost information
+ * This is based on what is done in M. Sellmann thesis but here with a naive non-incremental way
+ * returns a tuple with execstatus and 2 new bounds for the weight.
+ * PRE: the weights are non-negative
+ */
+template <class GDV>
+boost::tuple<ExecStatus,int,int> PathBoundsGraphs<GDV>::cost_filtering(Space* home, int sourceID, int targetID, const map <pair<int,int>,int> &edgecosts ,int uppercost){
+
+        // perform a SSSP in forward direction from sourceID s
+        // and a SSSP in reverse direction from targetID t
+        // store the distances F(x) = D(s,x,G) and R(y) = D(t,y,G^-1)  in two maps or vectors
+        // for each edge (i,j), check that it is possible by
+        // F(i) + Cij + R(j) <= uppercost
+
+        TRACE(cout << this << endl);
+        std::vector<int> e2w(num_edges(UB));
+        BGL_FORALL_EDGES(e, UB, Gecode::Graph::Graph) {
+                e2w[UB[e].index] =  edgecosts.find(make_pair(UB[source(e,UB)].id, UB[target(e,UB)].id ))->second ; // not using edgecosts[make_pair...] because operator[] inserts keys if missing
+        }
+
+        std::vector<int> dist(num_vertices(UB)) ;
+        Gecode::Graph::Graph::vertex_descriptor s = UB_v[sourceID];
+        // see http://www.boost.org/libs/graph/doc/bundles.html weight_map(get(&Highway::miles, map)) for distance_map and weight map
+        dijkstra_shortest_paths(UB, s, distance_map(make_iterator_property_map(&dist[0], get(&Node::index, UB))).vertex_index_map(get(&Node::index, UB)).weight_map(make_iterator_property_map(&e2w[0], get(&Edge::index, UB))));//.distance_compare(std::less<int>()));
+        std::vector<int> rdist(num_vertices(UB)) ;
+        boost::reverse_graph<Gecode::Graph::Graph> R(UB);
+        Gecode::Graph::Graph::vertex_descriptor t = UB_v[targetID];
+        boost::dijkstra_shortest_paths(R, t, boost::distance_map(boost::make_iterator_property_map(&rdist[0], get(&Node::index, UB))).vertex_index_map(get(&Node::index, UB)).weight_map(make_iterator_property_map(&e2w[0], get(&Edge::index, UB))).distance_compare(std::less<int>()));
+
+        vector<Gecode::Graph::Graph::edge_descriptor> removed; //temp for debug
+        vector<Gecode::Graph::Graph::vertex_descriptor> removednodes; //temp for debug
+        BGL_FORALL_VERTICES(v, UB, Gecode::Graph::Graph) {
+                if (dist[UB[v].index] + rdist[UB[v].index] > uppercost ) {
+                        removednodes.push_back(v);
+                }
+        }
+        BGL_FORALL_EDGES(e, UB, Gecode::Graph::Graph) {
+                if (dist[UB[source(e,UB)].index] + rdist[UB[target(e,UB)].index] + e2w[UB[e].index] > uppercost ) {
+                        removed.push_back(e);
+                }
+        }
+
+
+        TRACE(cout << "upper bound of cost : " << uppercost<<endl);
+        TRACE(cout << "######################################################" << endl);
+        TRACE(cout << "digraph { " << endl);
+        BGL_FORALL_VERTICES(v, UB, Gecode::Graph::Graph) {
+                TRACE(cout << UB[v].id << "[label='" << dist[UB[v].index] << "," << rdist[UB[v].index] << "']"<<endl );
+        }
+        BGL_FORALL_EDGES(e, UB, Gecode::Graph::Graph) {
+                TRACE(cout << UB[source(e,UB)].id << "->" << UB[target(e,UB)].id << "[label='"<<e2w[UB[e].index]<< "'");
+                if (find(removed.begin(), removed.end(), e) != removed.end()){
+                        TRACE(cout << " color=red]");
+                }
+                else {
+                        TRACE(cout << "]");
+                }
+                TRACE(cout << endl);
+        }
+        TRACE(cout << "}" << endl);
+        TRACE(cout << "######################################################" << endl);
+
+#define GECODE_ME_CHECK_3TUPLE(me) if (::Gecode::me_failed(me))\
+        return ::boost::make_tuple(::Gecode::ES_FAILED,0,0);
+
+        for (vector<Gecode::Graph::Graph::edge_descriptor>::iterator i = removed.begin(); i<removed.end(); ++i)
+                GECODE_ME_CHECK_3TUPLE(arcOut(home,UB[source(*i,UB)].id, UB[target(*i,UB)].id));
+        for (vector<Gecode::Graph::Graph::vertex_descriptor>::iterator i = removednodes.begin(); i<removednodes.end(); ++i)
+                GECODE_ME_CHECK_3TUPLE(nodeOut(home,UB[*i].id));
+
+        // PRE: all costs are positive
+        // TODO implement weight for the graph
+
+        resetEdgeIndexUB();
+        int weightUB = 0;
+        BGL_FORALL_EDGES(e, UB, Gecode::Graph::Graph) {
+                // not using edgecosts[make_pair...] because operator[] inserts keys if missing
+                weightUB += edgecosts.find(make_pair(UB[source(e,UB)].id, UB[target(e,UB)].id ))->second ;
+        }
+        int weightLB = 0;
+        BGL_FORALL_EDGES(e, LB, Gecode::Graph::Graph) {
+                weightLB += edgecosts.find(make_pair(LB[source(e,LB)].id, LB[target(e,LB)].id ))->second ;
+        }
+
+        return boost::make_tuple(ES_OK,weightLB,weightUB);
+}
+
+} }
+
+

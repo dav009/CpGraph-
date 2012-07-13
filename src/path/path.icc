@@ -1,0 +1,586 @@
+
+/*
+ *  Main authors:
+ *     Gr�goire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Gr�goire Dooms (Universit� catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 10:57:21 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 271 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+
+#include "path/pathgraphs.icc"
+#include <boost/graph/iteration_macros.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <list>
+#include <map>
+#include <vector>
+#include <utility>
+#include "boost/iterator/filter_iterator.hpp"
+#include "boost/iterator/transform_iterator.hpp"
+#include "boost/graph/depth_first_search.hpp"
+#include "boost/graph/connected_components.hpp"
+#include "boost/property_map.hpp"
+#include <ext/hash_map>
+
+//using namespace boost;
+//using namespace std;
+using namespace __gnu_cxx;
+namespace Gecode { namespace Graph {
+/** Path with cost propagator */
+
+template <class GView>
+forceinline
+PathCostPropag<GView>::PathCostPropag(Space* home, GView g, int st, int en, const map <pair<int,int>,int> &edgecosts, Int::IntView w)
+        :  Propagator(home), g(g), start(st), end (en), ecosts(edgecosts), w(w){
+                g.subscribe(home,this, Gecode::Graph::PC_GRAPH_ANY);
+                w.subscribe(home,this, Gecode::Int::PC_INT_DOM);
+        }
+
+template <class GView>
+        forceinline
+        PathCostPropag<GView>::PathCostPropag(Space* home, bool share, PathCostPropag& p)
+: Propagator(home,share,p), start(p.start), end(p.end), ecosts(p.ecosts) {
+        g.update(home,share,p.g);
+        w.update(home,share,p.w);
+}
+
+
+
+
+        /*!
+            Update Gecode 2.1.1.
+            This function
+            Cancels subscription of the graphView and the IntView to the PathCostPropag and Deletes the 	      PathCostPropag propagator
+         */
+        template <class GView>
+         size_t PathCostPropag<GView>::dispose(Space* home){
+
+        	g.cancel(home,this, Gecode::Graph::PC_GRAPH_ANY);
+        	w.cancel(home,this, Gecode::Int::PC_INT_DOM);
+        	  (void) Propagator::dispose(home);
+        	   return sizeof(*this);
+
+        }
+
+        /*!
+            Update Gecode 2.1.1.
+            Destructor is handled by inheritance.
+            Subscription cancelation is done by dispose function and not the destructor anymore.
+         */
+template <class GView>
+PathCostPropag<GView>::~PathCostPropag(){
+
+        //g.cancel(home,this, Gecode::Graph::PC_GRAPH_ANY);
+        //w.cancel(home,this, Gecode::Int::PC_INT_DOM);
+}
+
+template <class GView>
+Actor* PathCostPropag<GView>::copy(Space* home, bool share) {
+        return new (home) PathCostPropag(home,share,*this);
+}
+
+
+template <class GView>
+ExecStatus PathCostPropag<GView>::post(Space* home, GView &g,int start, int end, Int::IntView w, const map <pair<int,int>,int> &edgecosts) {
+        (void) new (home) PathCostPropag(home,g, start, end, edgecosts, w);
+        return ES_OK;
+}
+
+template <class GView>
+PropCost PathCostPropag<GView>::cost(ModEventDelta med) const {
+        return Gecode::PC_QUADRATIC_HI;
+}
+
+/*!
+    Update Gecode 2.1.1.
+	ModEventDelta med argument was added in order to handle Advisors in the Future.
+ */
+template <class GView>
+ExecStatus PathCostPropag<GView>::propagate(Space* home, ModEventDelta med) {
+		//std::cout<<"propagador cost"<<std::endl;
+        TRACE(cout << "coucou propag"<<endl);
+        PathBoundsGraphs<GView> bg(g);
+        ExecStatus e= bg.SCC_filtering(home, start, end  );
+        GECODE_ES_CHECK(e);
+        bg.resetVertexIndexUB();
+        bg.resetEdgeIndexUB();
+        TRACE(cout << "cost filtering:" << endl);
+        ExecStatus e2;
+        int wL,wU;
+        boost::tie(e2,wL,wU) = bg.cost_filtering(home, start, end, ecosts, w.max());
+        //TODO define a good way (tm) of combining ExecStatus
+        GECODE_ES_CHECK(e2);
+        e = std::min(e,e2);
+        TRACE(cout << "reducing the weight according to computed bounds:" << endl);
+        GECODE_ME_CHECK(w.gq(home,wL));
+        GECODE_ME_CHECK(w.lq(home,wU));
+        TRACE(cout << "au revoir propag" << endl);
+        return e;
+}
+/** Simple path propagator */
+
+template <class GView>
+forceinline
+PathPropag<GView>::PathPropag(Space* home, GView g, int st, int en)
+        :  Propagator(home), g(g), start(st), end (en){
+                g.subscribe(home,this, Gecode::Graph::PC_GRAPH_ANY);
+        }
+
+template <class GView>
+        forceinline
+        PathPropag<GView>::PathPropag(Space* home, bool share, PathPropag& p)
+: Propagator(home,share,p), start(p.start), end(p.end){
+        g.update(home,share,p.g);
+}
+        /*!
+            Update Gecode 2.1.1.
+            Destructor is handled by inheritance.
+            Subscription cancelation is done by dispose function and not the destructor anymore.
+         */
+template <class GView>
+PathPropag<GView>::~PathPropag(void){
+       //g.cancel(this, Gecode::Graph::PC_GRAPH_ANY);
+}
+
+template <class GView>
+Actor* PathPropag<GView>::copy(Space* home, bool share) {
+        return new (home) PathPropag(home,share,*this);
+}
+
+
+
+template <class GView>
+ExecStatus PathPropag<GView>::post(Space* home, GView &g,int start, int end) {
+        (void) new (home) PathPropag(home,g, start, end);
+        return ES_OK;
+}
+
+template <class GView>
+PropCost PathPropag<GView>::cost(ModEventDelta med) const {
+        return Gecode::PC_QUADRATIC_HI;
+}
+
+template <class GView>
+ExecStatus PathPropag<GView>::propagate(Space* home, ModEventDelta med) {
+
+        TRACE(cout << "coucou propag"<<endl);
+
+        PathBoundsGraphs<GView> bg(g);
+
+        ExecStatus e = bg.SCC_filtering(home,start,end  );
+
+        return e;
+}
+
+/*!
+            Update Gecode 2.1.1.
+            This function
+            Cancels subscription of the graphView to the  PathPropag and Deletes the  PathPropag propagator
+*/
+template <class GView>
+ size_t PathPropag<GView>::dispose(Space* home){
+	  //std::cout<<"dispose"<<std::endl;
+	g.cancel(home,this,Gecode::Graph::PC_GRAPH_ANY);
+	  (void) Propagator::dispose(home);
+	   return sizeof(*this);
+
+}
+
+
+
+/*
+ *
+ * Simple
+ *
+ */
+
+template <class GDV1>
+struct SimpleVisit{
+	
+	GDV1 *g1;
+	list<pair<int,int> > incG1;///< stores arcs which must be included in G1
+	list<pair<int,int> > remG1;///< stores arcs which must be removed from G1
+	SimpleVisit(GDV1 g1_):g1(&g1_) {};
+
+	void visitUnknown(int t, int h)
+	{
+		if (t==h)
+			remG1.push_back(make_pair(t,h));
+	};
+
+	void visitLower(int t,int h)
+	{
+		if (t==h)
+			fail();
+	};
+	void fail()
+       {
+		throw Failure();
+	}
+
+};
+
+/*
+ *
+ * Symmetric agregado por el equipo, OJO traido de VERSION PERDIDA
+ *
+ */
+template <class GDV1>
+struct SymmetricVisit{
+	
+	bool assigned; ///< tells if the variables are assigned
+	bool done; ///< tells if a scanning was already done
+	vector<vector<int> > isInG1; ///< For and arc (a,b) of g1, isInG1[a][b] is 0 if (a,b) belongs to None, is 1 if (a,b) belongs to Glb, is 2 if (a,b) belongs to Lub
+	GDV1 *g1;
+	list<pair<int,int> > incG1;///< stores arcs which must be included in G1
+	list<pair<int,int> > remG1;///< stores arcs which must be removed from G1
+	SymmetricVisit(GDV1 g1_):assigned(true),done(false),g1(&g1_) {
+
+
+         int maxNumNodos=g1->maxNodeId();
+          if(maxNumNodos<0)
+             maxNumNodos=0;
+ 		vector<int> tmp(maxNumNodos+1, 0);
+ 		vector<vector<int > > tmp2(maxNumNodos+1, tmp);
+
+ 		isInG1=tmp2;
+};
+	void fail()
+	{
+		throw Failure();
+	}
+
+	void visitUnknown(int t, int h)
+	{
+		//TRACE(cout << "visitUnknown : " << t << "," << h << endl;);
+		if (!done)
+			isInG1[t][h]=2; 
+		else
+			if (isInG1[h][t]==0) //None
+				remG1.push_back(make_pair(t,h));
+			else
+				if (isInG1[h][t]==1)	//Glb
+					incG1.push_back(make_pair(t,h));
+				else
+					assigned=false;
+	};
+
+	void visitLower(int t,int h)
+	{
+
+		//TRACE(cout << "visitLower : " << t << "," << h << endl;);
+		if (!done)
+			isInG1[t][h]=1; 
+		else
+			if (isInG1[h][t]==0) //None
+				fail();
+	};
+
+};
+
+
+
+
+
+template <class GView>
+Symmetric<GView>::Symmetric(Space* home, bool share, Symmetric& p):
+ Propagator(home,share,p),co1(home){
+         g.update(home,share,p.g);
+         co1.update(home,share,p.co1);
+         cuenta=p.cuenta;
+	 remArcs=p.remArcs;
+	 addArcs=p.addArcs;
+	 addnodes=p.addnodes;
+	 remnodes=p.remnodes;
+         remnodes.clear();
+	 activo=p.activo;
+	 indicador=p.indicador;
+	
+}
+
+template <class GView> size_t
+Symmetric<GView>::dispose(Space* home){
+        g.cancel(home, this, Gecode::PC_GEN_NONE);
+        (void) Propagator::dispose(home);
+        return sizeof(*this);
+}
+template <class GView>
+Symmetric<GView>::Symmetric(Space* home, GView &g):
+Propagator(home), g(g),co1(home),remArcs(),addArcs(),addnodes(),remnodes(){
+                g.subscribe(home,this, Gecode::PC_GEN_NONE);
+                cuenta=0;
+                indicador=0;
+                g.subscribe( home,this,&co1,1);
+		activo=0;
+}
+template <class GView>
+Actor*     Symmetric<GView>::copy(Space* home,bool share){
+        return new (home) Symmetric(home,share,*this);
+}
+template <class GView>
+PropCost    Symmetric<GView>::cost(ModEventDelta med) const{
+        return Gecode::PC_QUADRATIC_LO;
+}
+
+
+
+
+#define PRINT_VECTOR_PAIR_INT(v) { list<pair<int, int> >::iterator it_; \
+	for (it_=v.begin(); it_!=v.end(); it_++) \
+{ \
+	cout << "(" << it_->first << "," << it_->second << ") " ; \
+}; cout << endl; }
+
+#define PRINT_HASH_MAP(v) { hash_map<int,int>::iterator it; \
+	for (it=v.begin(); it!=v.end(); it++) \
+{ \
+	cout << "(" << it->first << ", "<< it->second << ")," ; \
+}; cout << endl; }
+
+
+template <class GView>
+	Gecode::ExecStatus
+	Symmetric<GView>::advise(Space* home, Advisor* _a, const Delta* d){
+        //the flag is set, so that the tells made by this propagator dont trigger the advisors subscribed to the same propagator
+	if(activo==1)
+	    return ES_FIX;
+        //the first propagation has to be complete(with scanning)
+       //indicador=0 stands for : complete propagation
+	if (cuenta==0){
+		indicador=0;
+		return ES_NOFIX;
+	}
+	nameAdvisor2* dav=static_cast<nameAdvisor2*>(_a);
+	const Gecode::Set::SetDelta* s_=static_cast<const Gecode::Set::SetDelta*>(d);			 
+		//si agrego la arista (B,c) agrego (C,B)
+
+	//if domain change is not simple!
+	if(s_->glbAny()==s_->lubAny())
+	{
+		indicador=0;
+	}
+
+
+	
+	
+	//an arc was changed.
+	if(dav->nombre==2)
+	{
+		
+                       //if the arc(a,b) was added, then (b,a) has to be added
+			if(s_->glbAny()==0)
+			{
+                                 //if the change is simple(just one arc was added)
+				 if(s_->glbMin()==s_->glbMax())
+				 {      //get the added arc
+					 std::pair<int,int>  arista=g.getArc(*dav,s_);
+	 				 nodoFuente=arista.first;
+	 				 nodoFinal=arista.second;
+					//if (b,a) is not in the upperbound then fail.
+					if(!g.arcIsInUB(nodoFinal,nodoFuente))
+							return ES_FAILED;
+					
+					addArcs.push_back(std::pair< int, int>(nodoFinal,nodoFuente));
+	 				return ES_NOFIX;
+				 }
+				 else{ //if the change wasnt simple then complete propagation is needed.
+					indicador=0;
+					return ES_NOFIX;		 
+				 }
+			}
+			
+			//if the arc(a,b) is removed then (b,a) has to be removed too
+			if(s_->lubAny()==0)
+			{
+				  //if the change is simple(just one arc was removed)
+				 if(s_->lubMin()==s_->lubMax())
+				 {
+					  //get the removedArc
+					 std::pair<int,int>  arista=g.getArc(*dav,s_);
+	 				 nodoFuente=arista.first;
+	 				 nodoFinal=arista.second;
+ 					//if (b,a) is in the lowerBound then fail.
+					if(g.arcIsInLB(nodoFinal,nodoFuente))
+							return ES_FAILED;
+		 
+					remArcs.push_back(std::pair< int,  int>(nodoFinal,nodoFuente));
+	 				return ES_NOFIX;
+	
+				 }
+				 else
+				 {       //if the change wasnt simple then complete propagation is needed.
+					indicador=0;
+					return ES_NOFIX;
+				 }
+				 
+			}
+			indicador=0;
+			return ES_NOFIX;
+	
+	
+		
+	}
+	else
+	{ //if anode changed, then no propagation is needed.
+		return ES_FIX;
+	}
+        indicador=0;
+	return ES_NOFIX;
+}
+
+template <class GView>
+ExecStatus  Symmetric<GView>::propagate(Space* home,ModEventDelta med){
+        TRACE(cout << "Symmetric propragation"<<endl);
+	TRACE(g.print());
+	//the flag is set, so that the tells made by this propagator dont trigger the advisors subscribed to the same propagator
+	activo=1;
+	 //the propagator is propagating so we count it.
+	cuenta++;
+
+	/*remove & add the arcs and nodes which are in the vectors*/
+	for (int i=0;i<addArcs.size();i++)	
+	{
+		std::pair< int, int>arc=addArcs[i];
+		GECODE_ME_CHECK(g._arcIn(home,arc.first,arc.second));
+	}
+	for (int i=0;i<remArcs.size();i++)	
+	{
+		std::pair< int, int>arc=remArcs[i];
+		GECODE_ME_CHECK(g._arcOut(home,arc.first,arc.second));
+	}
+	//the vectors are cleared
+	addArcs.clear();
+	remArcs.clear();
+	 //if indicator is different from 0, then no complete propagation is needed
+	if(indicador!=0)
+	{
+		//the flag is released
+		activo=0;	
+		return ES_NOFIX;
+	}
+
+	 //in case complete propagation is needed:
+	SymmetricVisit<GView> visit(g);
+	try{
+		scanGraphArcs(g, visit);
+	}
+	catch(Failure e)
+         {
+		return ES_FAILED;
+	}
+	visit.done=true;
+	//TRACE(cout << "visit done" << endl;)
+	//TRACE(PRINT_HASH_MAP((visit.visited)));
+	try{
+		scanGraphArcs(g, visit);
+	}
+	catch(Failure e)
+         {
+		return ES_FAILED;
+	}
+	//TRACE (cout << "remove" << endl);
+	//TRACE(PRINT_VECTOR_PAIR_INT((visit.remG1)));
+	//TRACE (cout << "push" << endl);
+	//TRACE(PRINT_VECTOR_PAIR_INT((visit.incG1)));
+
+        typedef StlToGecodeValIterator<list<pair<int,int> >::iterator> ItVal;
+        ItVal remG1(visit.remG1.begin(),visit.remG1.end());
+        GECODE_ME_CHECK(g._arcsOut(home,remG1));
+        ItVal incG1(visit.incG1.begin(),visit.incG1.end());
+        GECODE_ME_CHECK(g._arcsIn(home,incG1));
+	//TRACE(g.print());
+	indicador=-1;	
+	activo=0;
+        if (g.assigned())
+		return ES_SUBSUMED((Propagator*)this,dispose(home));
+        else {
+            return ES_NOFIX;
+        }
+}
+template <class GView>
+ExecStatus Symmetric<GView>::post(Space* home, GView &g) {
+        (void) new (home) Symmetric(home,g);
+        return ES_OK;
+}
+template<class GView>
+void symmetric(Space *home, GView g){
+        GECODE_ES_FAIL(home,Symmetric<GView>::post(home, g));
+}
+
+/*Simple agregado por el equipo*/
+template <class GView>
+Simple<GView>::Simple(Space* home, bool share, Simple& p):
+ Propagator(home,share,p){
+        g.update(home,share,p.g);
+}
+template <class GView> size_t
+Simple<GView>::dispose(Space* home){
+        if (!home->failed()){
+            g.cancel(home, this, Gecode::Graph::PC_GRAPH_ANY);
+        }
+        (void) Propagator::dispose(home);
+        return sizeof(*this);
+}
+template <class GView>
+Simple<GView>::Simple(Space* home, GView &g):
+Propagator(home), g(g){
+                g.subscribe(home,this, Gecode::Graph::PC_GRAPH_ANY);
+}
+template <class GView>
+Actor*     Simple<GView>::copy(Space* home,bool share){
+        return new (home) Simple(home,share,*this);
+}
+template <class GView>
+PropCost    Simple<GView>::cost(ModEventDelta med) const{
+        return Gecode::PC_QUADRATIC_LO;
+}
+
+template <class GView>
+ExecStatus  Simple<GView>::propagate(Space* home,ModEventDelta med){
+	TRACE(cout << "Simple propragation"<<endl);
+	TRACE(g.print());
+
+	SimpleVisit<GView> visit(g);
+	try{
+	scanGraphArcs(g, visit);}
+	catch(Failure e)
+ 	{
+          return ES_FAILED;	
+	}
+
+
+	typedef StlToGecodeValIterator<list<pair<int,int> >::iterator> ItVal;
+	ItVal remG1(visit.remG1.begin(),visit.remG1.end());
+	GECODE_ME_CHECK(g._arcsOut(home,remG1));
+	ItVal incG1(visit.incG1.begin(),visit.incG1.end());
+	GECODE_ME_CHECK(g._arcsIn(home,incG1));
+
+
+
+	return ES_SUBSUMED(this,home);
+}
+template <class GView>
+ExecStatus Simple<GView>::post(Space* home, GView &g) {
+        (void) new (home) Simple(home,g);
+        return ES_OK;
+}
+template<class GView>
+void simple(Space *home, GView g){
+        GECODE_ES_FAIL(home,Simple<GView>::post(home, g));
+}
+
+
+}
+
+
+}

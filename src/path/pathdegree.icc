@@ -1,0 +1,229 @@
+
+/*
+ *  Main authors:
+ *     Gr�goire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Gr�goire Dooms (Universit� catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 10:57:21 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 271 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+#include<iostream>
+#include <list>
+//using namespace boost;
+//using namespace std;
+namespace Gecode { namespace Graph {
+template <class GView> 
+    void pathdegree(Space *home, GView &g, int start, int end);
+
+/*!
+            Update Gecode 2.1.1.
+            bool_not Constrait is not available anymore in gecode 2.1.1.
+            bool_not(Space* home,BoolVar a,Boolvar b) holds that: not(a)=b
+            
+           
+            bool_not(home, iInNodes(i), iNotInNodes(i));
+            was replaced for
+                 rel(home, iInNodes(i),IRT_NQ  , iNotInNodes(i));
+            which holds that:
+               iInNodes(i)!= iNotInNodes(i)
+              
+           Since Gecode 2.1.1 has different views implementations for bool variables and Int Variables
+           a Channeling constraint had to be added to fix constrainst which could handle both types in Gecode 1.0.0
+           
+           
+            
+*/
+template <>
+    void pathdegree(Space *home, OutAdjSetsGraphView &g, int start, int end){
+  
+        int numNodes = g.outN.size();
+        BoolVarArray b(home,3*numNodes,0,1);
+        #define iInNodes(i)  b[0+3*(i)]
+        #define iNotInNodes(i) b[1+3*(i)]
+        #define iOutsEmpty(i) b[2+3*(i)]
+        Gecode::IntSet empty;
+
+        for (int i=0 ; i<numNodes ; i++){
+                //include(home,nodes,i,iInNodes(i));
+                dom(home, g.nodes, SRT_SUP, i, iInNodes(i));
+                
+                /*!
+                 *            bool_not(home, iInNodes(i), iNotInNodes(i));
+				            was replaced for
+				                 rel(home, iInNodes(i),IRT_NQ  , iNotInNodes(i));
+				            which holds that:
+				               iInNodes(i)!= iNotInNodes(i) 
+                 * */
+                
+                /* Update Gecode 2.1.1
+                 * 
+                 *  bool_not existe en gecode 2.1.1 REVISAR
+                 * Se reemplazo la restriccion not(  iInNodes(i) )=  iNotInNodes(i)  por   iInNodes(i)!= iNotInNodes(i) 
+                 * */
+              //  bool_not(home, iInNodes(i), iNotInNodes(i)); es ilegal en el nuevo gecode. Esta restriccion quiere indicar not(  iInNodes(i) )=  iNotInNodes(i)
+                rel(home, iInNodes(i),IRT_NQ  , iNotInNodes(i));
+                dom(home, g.outN[i], SRT_EQ, empty, iOutsEmpty(i)); 
+        }
+        cardinality(home,g.outN[end],0,0); 
+
+        //outdegree(i) == i in nodes
+        for (int i=0; i<numNodes; i++){
+                if (i!=end)
+                {
+                       // REVISAR cambiado cardinality(home,g.outN[i],iInNodes(i));
+                	//se introdujo una variable auxiliar para hacer el channeling entre bool e Int
+                	
+                	/*!
+                	 * Update Gecode 2.1.1
+                	 *    Since Gecode 2.1.1 has different views implementations for bool variables and Int Variables
+           					a Channeling constraint had to be added to fix constrainst which could handle both types in Gecode 1.0.0 but couldt do that anymore in gecode 2.1.1
+           				In this case Cardinality constraint was meant for IntVar variables in Gecode 2.1.1.
+           				The channeling constraint allows to cast a BoolVar to an IntVar
+                	 * */
+               	    IntVar aux(home,0,1);
+                    channel(home,aux, iInNodes(i));
+                    cardinality(home,g.outN[i],aux);
+                }
+        }
+        //indegree(i) == i in nodes
+        //        selectDisjoint(home,outN,outN[numNodes]);
+        //replaced with: 
+        for (int i=0; i< numNodes; i++){
+                IntVarArgs iinOuts(numNodes);
+                for (int j=0 ; j< numNodes; j++){
+                        BoolVar b(home,0,1);
+                        //REVISAR otro channeling de bool a Int
+                    	/*!
+                    	 * Update Gecode 2.1.1
+                    	 *    Since Gecode 2.1.1 has different views implementations for bool variables and Int Variables
+               					a Channeling constraint had to be added to fix constrainst which could handle both types in Gecode 1.0.0 but couldt do that anymore in gecode 2.1.1
+               				In this case Cardinality constraint was meant for IntVar variables in Gecode 2.1.1.
+               				The channeling constraint allows to cast a BoolVar to an IntVar
+                    	 * */
+                        // iinOuts[j]=b; cambiado
+                        IntVar aux(home,0,1);
+                        channel(home,aux,b);
+                        iinOuts[j]=aux;
+                     
+                        dom(home,g.outN[j],SRT_SUP,i,b);
+                }
+                if (i !=start){
+                	  //REVISAR OJO CUIDADO OTRO channeling no seguro sobre este channeling entre auxLinear y ilnNodes(i)
+                	/*!
+                	 * Update Gecode 2.1.1
+                	 *    Since Gecode 2.1.1 has different views implementations for bool variables and Int Variables
+           					a Channeling constraint had to be added to fix constrainst which could handle both types in Gecode 1.0.0 but couldt do that anymore in gecode 2.1.1
+           				In this case Cardinality constraint was meant for IntVar variables in Gecode 2.1.1.
+           				The channeling constraint allows to cast a BoolVar to an IntVar
+                	 * */
+                	   IntVar auxLinear(home,0,1);
+                	   channel(home,auxLinear,iInNodes(i));
+                        linear(home,iinOuts,IRT_EQ,auxLinear);
+                }
+                else{
+                        linear(home,iinOuts,IRT_EQ,0);
+                }
+        }
+        
+}
+
+template <class GView>
+PathDegreePropag<GView>::~PathDegreePropag(void){ 
+     //  g.cancel(this, Gecode::Graph::PC_GRAPH_ANY);
+}
+
+//REVISAR funcion dispose Agregaada.
+//Completamente implementada
+/*!
+    Update Gecode 2.1.1.
+    Destructor is handled by inheritance.
+    Subscription cancelation is done by dispose function and not the destructor anymore.
+ */ 
+template <class GView>
+ size_t PathDegreePropag<GView>::dispose(Space* home){
+	
+	g.cancel(home,this,Gecode::Graph::PC_GRAPH_LUB);
+	  (void) Propagator::dispose(home);
+	   return sizeof(*this);
+
+}
+
+template <class GView>
+Actor* PathDegreePropag<GView>::copy(Space* home, bool share) {
+        return new (home) PathDegreePropag(home,share,*this);
+}
+
+template <class GView>
+PathDegreePropag<GView>::PathDegreePropag(Space* home, GView &g,int start, int end): Propagator(home), g(g), start(start), end(end) {
+	g.subscribe(home,this, Gecode::Graph::PC_GRAPH_LUB);
+}
+
+template <class GView>
+ExecStatus PathDegreePropag<GView>::post(Space* home, GView &g,int start, int end) {
+        (void) new (home) PathDegreePropag(home,g, start, end);
+        return ES_OK;
+}
+
+template <class GView>
+PropCost 
+PathDegreePropag<GView>::cost(ModEventDelta med) const {
+        return Gecode::PC_QUADRATIC_LO;
+}
+
+template <class GView>
+        forceinline
+        PathDegreePropag<GView>::PathDegreePropag(Space* home, bool share, PathDegreePropag& p)
+: Propagator(home,share,p) { 
+        g.update(home,share,p.g);
+}
+
+template <class GView>
+/*!
+ * Update Gecode 2.1.1
+ * 
+ * ModEventDelta argument was added, this allows the use of Advisors in the future.
+ * */
+ExecStatus PathDegreePropag<GView>::propagate(Space* home, ModEventDelta med) {
+// Pruning rules:
+// if an arc is in LB remove other arcs (in UB) with same head or same tail
+// Not implemented : if a node is in LB and there is only one arc with it as head or as tail then that arc gets in LB.
+
+	map<int,int> tail; //head -> tail of arcs in LB
+	map<int,int> head; //tail -> head
+
+	typename GView::GlbArcIterator  l = g.iter_arcs_LB();
+	for (; l(); ++l){
+		int t,h;
+        boost::tie(t,h) = l.val();
+		head[t] = h;
+		tail[h] = t;
+	}
+
+	list<pair<int,int> > removeArcs;
+	typename GView::LubArcIterator  u = g.iter_arcs_UB();
+	for (; u(); ++u){
+		int t,h;
+		boost::tie(t,h) = u.val();
+        map<int,int>::iterator i;
+		if (((i = head.find(t)) != head.end() && i->second != h) ||
+            ((i = tail.find(h)) != tail.end() && i->second != t)) {
+		    removeArcs.push_back(make_pair(t,h));
+        }
+	}
+	// XXX TODO replace with an adequate removeArcs method
+	for (list<pair<int,int> >::const_iterator k=removeArcs.begin(); k!=removeArcs.end(); ++k){
+		GECODE_ME_CHECK(g._arcOut(home,k->first,k->second));
+	}
+    return ES_FIX;
+}
+} } 

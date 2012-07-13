@@ -1,0 +1,711 @@
+#LyX 1.5.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass book
+\begin_preamble
+\setcounter{section}{2}
+\usepackage{color}
+\usepackage{alltt}
+\usepackage{mdwlist}
+\end_preamble
+\language spanish
+\inputencoding auto
+\font_roman lmodern
+\font_sans default
+\font_typewriter default
+\font_default_family rmdefault
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\paperfontsize default
+\spacing single
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\leftmargin 3cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 2cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Modificaciones
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+
+\lang english
+Este capítulo 4 escribi rapidamente lo que va en cada seccion para retomar
+ manana,  no es que sea lo ultimo.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Éste capítulo pretende mostrar las modificaciones más importantes realizadas
+ a CP(Graph).
+\end_layout
+
+\begin_layout Standard
+El procedimiento que se aplico para realizar las modificaciones fue:
+\end_layout
+
+\begin_layout Itemize
+Identificar mediante el registro de cambios de Gecode los cambios a nivel
+ de implementación 
+\begin_inset LatexCommand cite
+key "key-52"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+El uso del compilador de GNU para rastrear errores de compilación.
+\end_layout
+
+\begin_layout Itemize
+El uso del GDB para rastrear problemas de segmentación y depuración.
+\end_layout
+
+\begin_layout Itemize
+El uso intensivo de la documentación de Gecode 1.0 y Gecode 2.1.1.
+\end_layout
+
+\begin_layout Section
+Propagadores
+\end_layout
+
+\begin_layout Subsection
+Cambios Generales
+\end_layout
+
+\begin_layout Standard
+Sobre los Propagadores se realizaron cambios a nivel de implementación que
+ involucraban:
+\end_layout
+
+\begin_layout Itemize
+Incluir nuevos parámetros en los métodos de propagación
+\end_layout
+
+\begin_layout Itemize
+Cambiar identificadores de constantes
+\end_layout
+
+\begin_layout Itemize
+Involucrar restricciones de Channeling para permitir imponer restricciones
+ de las IntVar a variables del dominio de los Booleanos.
+\end_layout
+
+\begin_layout Itemize
+Evitar la implementación de código,  haciendo que los Propagadores hereden
+ de las clases UnaryPropagator y BinaryPropagator.
+\end_layout
+
+\begin_layout Subsection
+Propagadores con Visitors
+\end_layout
+
+\begin_layout Standard
+Durante la propagación existen varios Propagadores que usan visitors,  los
+ visitors son clases que a su vez usan un scanner.
+ En el CP(Graph) original la idea es iterar durante todo el scan,  sin importar
+ si se ha encontrado un fallo,  luego se revisa si se encontró un fallo.
+ La idea fue implementar un método que permitiera determinar cuando habría
+ encontrado un fallo y de esa forma evitar completamente el scaneo posterior,
+  pues ya se sabe de antemano que el Propagador generara un fallo y no sirve
+ de nada seguir el scan.
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+Falta decir aquí o en la parte inicial que es un visitor y que es un scanner
+ claramente.
+ Tengo en mente un gráfico para esa explicación
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Propagadores Agregados
+\end_layout
+
+\begin_layout Standard
+Se agregaron tres Propagadores encontrados en la versión no oficial 
+\begin_inset LatexCommand cite
+key "key-18"
+
+\end_inset
+
+ de CP(Graph),  para ambos se comprobó su funcionamiento con ambas Vistas.
+ La lógica de su funcionamiento es la misma que la expresada teóricamente
+ en la tesis de Gregoire Dooms.
+\end_layout
+
+\begin_layout Standard
+Los propagadores que se agregaron fueron:
+\end_layout
+
+\begin_layout Itemize
+Symmetric
+\begin_inset LatexCommand cite
+key "introtocpgraph"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Undirected
+\begin_inset LatexCommand cite
+key "introtocpgraph"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Subgraph
+\begin_inset LatexCommand cite
+key "introtocpgraph"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Advisores
+\end_layout
+
+\begin_layout Standard
+Se experimento con la implementación de Advisores para varios de los Propagadore
+s disponibles.
+ Finalmente se adoptaron dos advisores para los Propagadores Symmetric,
+  Subgraph y Complement.
+ 
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+Pendiente agregar complement en caso de que complement tambien tenga Advisor
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Los Advisores en los Propagadores propuestos por Dooms en CP(Graph) tienen
+ gran utilidad y pueden reducir el tiempo de ejecución notablemente.Normalmente
+ a nivel de implementación durante la propagación,  los Propagadores de
+ CP(Graph) tienen que usar un visitor y un scanner.
+ El scanner es un objeto encargado de explorar las aristas/nodos de un grafo
+ y clasificar cada arista/nodo,  esta clasificación es usada por el visitor
+ para almacenar cuales aristas/nodos deben ser quitados o agregados del
+ Intervalo de grafos.
+ e.g el Propagador de Complement (Impone la restriccion g1 es el complemento
+ de g2) tiene un scanner que recibe dos grafos,  este scanner tiene que
+ generar cada arista del grafo completo,  y clasificarlas para el ComplementVisi
+tor,  quien le informara al Propagador que aristas agregar al LB y cuales
+ quitar del UB.
+ La figura 9 tiene un esquema del funcionamiento más detallado.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graphics/complementScanner.svg
+	scale 60
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
+Scanner y Visitor usados por el Propagador de Complemento
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Durante cada propagación del Propagador de complemento,  se debe iterar
+ por cada arista del grafo completo,  sin importar si el cambio sobre uno
+ de los dos grafos fue el más mínimo,  el Propagador usara el visitor, 
+ el visitor usara el scanner y el scanner realizara una iteración completa
+ para entregarle al visitor la clasificación de las aristas.
+\end_layout
+
+\begin_layout Standard
+El funcionamiento es similar para todos los Propagadores,  la única diferencia
+ entre los Propagadores son los visitores y scaners que usan, es claro que
+ existen scaneres más costosos que otros.
+ En Gecode 1.0 esto era necesario puesto que no había forma de saber cual
+ variable cambio,  ni cual fue el cambio realizado,  por ello durante cada
+ propagación el Propagador tenia que 
+\begin_inset Quotes eld
+\end_inset
+
+empezar de cero
+\begin_inset Quotes erd
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+En Gecode 2.1.1 se tiene el componente extra,  los advisores que pueden informar
+ que variable cambio y cual fue el cambio del dominio,  aunque lo anterior
+ tiene una limitación,  los advisores solo pueden informar de cambios pequeños
+ sobre una variable,  si existieron muchos cambios entonces el advisor no
+ puede dar un informe de los cambios.
+\end_layout
+
+\begin_layout Standard
+Retomando el ejemplo anterior incluyendo advisores,  el advisor podría cambiar
+ el estado interno del Propagador diciéndole que el ultimo cambio fue que
+ una arista se agrego al LB del grafo g1,  en caso tal,  un scaneo completo
+ no es necesario,  bastaría  con que el Propagador haga un tell diciéndole
+ al grafo g2 que remueva la arista del UB de g2.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\begin_inset Graphics
+	filename graphics/comparacionPropagacion.svg
+	scale 70
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
+Esquema general del cambio en la propagación con advisores
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Modificaciones Generales Hechas Sobre los Propagadores que Usan Advisores
+\end_layout
+
+\begin_layout Standard
+Aquí se mencionan las modificaciones que se realizaron sobre todos los Propagado
+res que usan advisores.
+\end_layout
+
+\begin_layout Standard
+El manejo de advisores en Gecode es relativamente sencillo,  consiste en
+ implementar una funcion virtual en los Propagadores,  esta funcion se llama
+ advise,  allí se modificara el estado interno del Propagador y se le indicara
+ si debe o no propagar.
+ Sin embargo hay que hacer unos cambios para adecuar un Propagador de forma
+ que trabaje conjuntamente con los advisores.
+ 
+\end_layout
+
+\begin_layout Itemize
+La PC a las que están subscritos es PC_GEN_NONE,  quiere decir que ningún
+ Propagador que use advisores sera ejecutado por una condición de propagación,
+  la única forma de que la funcion de propagación sea ejecutada es por que
+ el advisor ha determinado que el Propagador debe ser corrido.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+Los nombres de estas variables deben cambiar al idioma ingles,  cambiar
+ esta parte en el futuro
+\end_layout
+
+\end_inset
+
+Cada Propagador contiene una variable entera 
+\begin_inset Quotes eld
+\end_inset
+
+cuenta
+\begin_inset Quotes erd
+\end_inset
+
+ que se encarga de contar cuantas veces ha sido corrido,  y cuyo objetivo
+ es garantizar que la primera vez que el Propagador es corrido se realiza
+ una propagación con scaneo.
+ Existe otra forma de lograr este mismo efecto,  y es subscribiendo manualmente
+ el Propagador al inicio en el CSP planteado.
+\end_layout
+
+\begin_layout Itemize
+Cada Propagador contiene una variable entera 
+\begin_inset Quotes eld
+\end_inset
+
+activo
+\begin_inset Quotes erd
+\end_inset
+
+ cuyo trabajo es ser una bandera.
+ Cuando el Propagador con advisores realiza la propagación se realizan un
+ conjunto de Tells,  que generan al mismo tiempo ModEvents sobre las variables
+ cuyos dominios están siendo modificadas,  cuando estos ModEvents Ocurren,
+  los advisores que están suscritos a estas variables,  empezaran a ejecutarse
+ y a encolar los respectivos Propagadores a quienes están suscritos.
+ La idea con la bandera es indicar cuando el advisor llamado pertenece al
+ Propagador que actualmente esta corriendo y de esta forma evitar que lo
+ encole nuevamente.
+\end_layout
+
+\begin_layout Itemize
+Cada Propagador contiene una variable 
+\begin_inset Quotes eld
+\end_inset
+
+co
+\begin_inset Quotes erd
+\end_inset
+
+ la cual es un objeto Council y sera encargado de mantener los advisores.
+ Esta variable es usada en el constructor del Propagador para subscribir
+ las variables a los advisores.
+\end_layout
+
+\begin_layout Itemize
+En el constructor del Propagador aquellas variables que dependan del Propagador
+ deben subscribirse a un advisor.
+\end_layout
+
+\begin_layout Itemize
+Cada Propagador usa la clase 
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+cambiar nombre de estaclase por una mas apropiada.
+\end_layout
+
+\end_inset
+
+ nameAdvisor para saber en el método advise,  cual variable ha cambiado
+ y que es lo que cambio (Una arista o Un nodo),  además para identificar
+ si se agrego al LB o se quito del UB.
+\end_layout
+
+\begin_layout Itemize
+Cada Propagador contiene una variable entera 
+\begin_inset Quotes eld
+\end_inset
+
+indicador
+\begin_inset Quotes erd
+\end_inset
+
+ que indica el estado actual del Propagador.
+ Esta variable determina la forma de propagar.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+NameAdvisor
+\series default
+
+\newline
+ La clase NameAdvisor fue creada,  esta clase extiende de un viewAdvisor<SetView
+>.
+ Un objeto de esta clase llega como parámetro al método Advise,  este objeto
+ contiene toda la información concerniente a que fue lo que cambio en el
+ dominio (Una arista o Un Nodo) y si fue agregado al LB o removido del UB.
+\end_layout
+
+\begin_layout Standard
+Esta clase extiende de un SetView puesto que internamente las variables
+ de grafos están construidas a partir de SetView, lo que significa que a
+ bajo nivel,  el quitar o poner una arista/nodo es una modificación a una
+ o más variables de conjuntos.
+\end_layout
+
+\begin_layout Itemize
+El atributo graph_id,  sirve como referencia para los Propagadores que tienen
+ varias variables de grafos,  y de esta forma saber en el método advise
+ cual grafo fue el que genero el llamado a la funcion Advise.
+\end_layout
+
+\begin_layout Itemize
+El atributo nombre sirve como referencia para saber si el cambio se efectuó
+ sobre una arista o un nodo.
+\end_layout
+
+\begin_layout Itemize
+El atributo índice sirve para saber exactamente cual variable cambio dentro
+ de un arreglo de variables de conjuntos.
+\end_layout
+
+\begin_layout Section
+Variables & Views
+\end_layout
+
+\begin_layout Standard
+En esta sección se explicaran aquellos cambios relevantes hechos sobre las
+ Vistas de CP(Graph)
+\end_layout
+
+\begin_layout Subsection
+Inclusión de Advisores
+\end_layout
+
+\begin_layout Standard
+La inclusión de advisores o al menos la posibilidad de tener advisores genero
+ cambios importantes en las dos Vistas disponibles en CP(Graph).
+ Debe existir un método capaz de suscribir un advisor a una variable de
+ grafos.
+ Para ello se incluyo un nuevo método en cada Vista,  el método Subscribe
+ que recibe un Council, un Propagador y un identificador de grafo (nombre
+ para el grafo).
+\end_layout
+
+\begin_layout Standard
+Este método se encarga de suscribir un advisor a una Vista de grafos.
+ La razón por la que este método se incluye en la Vista es para abstraer
+ del Propagador la forma como cada Vista subscribe los advisores,  de esta
+ forma cada Vista tiene una manera diferente de realizar la subscripción,
+  siendo para el Propagador indiferente la forma como este proceso se haga.
+\end_layout
+
+\begin_layout Standard
+Dado que Cada implementación de Variable subscribe a los advisores de manera
+ diferente,  se explicara como se realiza la subscripción para las Vistas
+ disponibles en CP(Graph) ya que esto tiene un impacto importante en el
+ rendimiento de los Propagadores que usen los advisores.
+ En el capítulo 
+\begin_inset LatexCommand prettyref
+reference "sub:Variables-Disponibles-En-CpGraph"
+
+\end_inset
+
+ se explica detalladamente las características de las Vistas disponibles
+ en CP(Graph)
+\end_layout
+
+\begin_layout Subsubsection*
+OutAdjSetsGraphView
+\end_layout
+
+\begin_layout Standard
+La subscripción de esta Vista se hace subscribiendo las variables internas
+ que la conforman:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+NodeSet
+\series default
+: La variable de conjuntos,  que determina el conjunto de nodos del grafo
+ resultante.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+OutN
+\series default
+: el arreglo de variables de conjuntos,  que determina para cada nodo el
+ conjunto de vecinos de salida (out neighbors,  en inglés).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graphics/advisorSubscription_Out.svg
+	scale 80
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
+Suscripción de Advisores en OutAdjSetsGraphView
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+La figura 12,  muestra como un Propagador P que usa advisores suscribe una
+ de sus variables que es una Vista OutAdjSetsGraphView a los advisores.
+ Existe un advisor por cada variable de conjuntos,  quiere decir que cada
+ vez que una de estas variables sea modificada el método advise del Propagador
+ sera llamado y la información sobre el cambio del dominio viajara en un
+ objeto tipo Advisor.
+\end_layout
+
+\begin_layout Subsubsection*
+NodeArcSetsGraphView
+\end_layout
+
+\begin_layout Standard
+La subscripción de esta Vista se hace subscribiendo las variables internas
+ que la conforman:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+NodeSet
+\series default
+: La variable de conjuntos,  que determina el conjunto de nodos del grafo
+ resultante.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+ArcSet
+\series default
+: La variable de conjuntos,  que determina el conjunto de aristas del grafo
+ resultante.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graphics/advisorSubscription_Node.svg
+	scale 80
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
+Suscripción de Advisores en NodeArcSetsGraphView
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+La figura 13 muestra como un Propagador P que usa advisores suscribe una
+ de sus variables la cual es una Vista NodeArcSetsGraphView a los advisores.
+ Existe un advisor por cada variable de conjuntos,  es decir solo dos advisores.
+\end_layout
+
+\end_body
+\end_document

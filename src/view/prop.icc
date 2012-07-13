@@ -1,0 +1,165 @@
+
+/*
+ *  Main authors:
+ *     Gr�goire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Gr�goire Dooms (Universit� catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 10:57:21 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 271 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+
+#include <vector>
+#include <utility>
+#include <set>
+#include <list>
+#include "graph.hh"
+
+#undef TRACE
+#define TRACE(A)
+
+//using namespace boost;
+//using namespace std;
+
+namespace Gecode { namespace Graph {
+/** \brief Propagator for the inherent graph constraint 
+ *
+ * As the underlying sets used by some GraphViews can be reused by set propagators,
+ * the constraint of being a graph must be posted on them. */
+
+template <class View>
+class ArcImpliesNodes:public Propagator {
+        View g;
+
+        public:
+        /// Constructor for posting 
+        ArcImpliesNodes( Space * home , View g) : Propagator(home),  g(g)
+                 {
+        	g.subscribe(home,this, Gecode::Graph::PC_GRAPH_ANY);
+                }
+
+        forceinline   size_t
+        dispose(Space* home) {
+            if (!home->failed()) {
+                g.cancel(home,this,Gecode::Graph::PC_GRAPH_ANY);
+            }
+            (void) Propagator::dispose(home);
+            return sizeof(*this);
+        }
+        
+        /// Destructor for cancelling 
+        ~ArcImpliesNodes(){
+                //g.cancel(g.home,this, Gecode::Graph::PC_GRAPH_ANY );
+        }
+
+        /// Post propagator \f$ \forall (a,b)\in Arcs(g) : (a\in Nodes(g) \wedge  b\in Nodes(g)) \f$ 
+        static ExecStatus
+                post( Space* home, View g) {
+                        (void) new (home) ArcImpliesNodes(home,g);
+                        return ES_OK;
+                }
+
+        /// Constructor for cloning \a p 
+        //Gecode 2.1.1: It was modified in order to extend from an unaryPropagator
+        forceinline
+                ArcImpliesNodes(Space* home, bool share, ArcImpliesNodes& p)
+                : Propagator(home, share, p) {
+                	g.update(home,share,p.g) ;
+                }
+               
+                
+                Support::Symbol
+               ati(void) {
+                return Support::Symbol("Gecode::Graph::ArcImpliesNodes");
+               }
+
+               
+            /*   
+                  Reflection::ActorSpec
+                 spec(const Space* home, Reflection::VarMap& m,
+                                               const Support::Symbol& ati) const {
+                 Reflection::ActorSpec s(ati);
+                 return s << g.spec(home, m);
+               }*/
+
+        /// Copy propagator during cloning
+        Actor*
+                copy(Space* home, bool share) {
+                        TRACE(cout << "copie de ArcImpliesNode " << endl); 
+                        return new (home) ArcImpliesNodes(home,share,*this);
+                }
+
+        /// Return cost
+        PropCost
+                cost(ModEventDelta med) const {
+                        return PC_TERNARY_HI; //XXX
+                }
+
+        /// Perform propagation
+        //ModEvenDelta was added as an argument
+        ExecStatus 
+                propagate(Space* home,ModEventDelta med) {
+                        /** Scan all arcs in LB, collect their endnodes 
+                          include them in the nodes LB */
+                        {
+                        	SetVar prueba;
+                        	
+                                typename View::GlbArcIterator arcs = g.iter_arcs_LB();
+                                list<int> l;
+                                TRACE(cout << "ARC => NODES Propag:" << endl);
+                                for (; arcs(); ++arcs){
+                                          int t,h ;
+                                         boost::tie(t,h) = arcs.val();
+                                          TRACE(cout << t << " " << h << ",  ");
+                                          l.push_back(t);
+                                          l.push_back(h);
+                                }
+                                l.sort();
+                                unique(l.begin(),l.end());
+                                StlToGecodeValIterator<list<int>::iterator> incR(l.begin(),l.end());
+                                //Iter::Values::ToRanges<StlToGecodeValIterator<list<int>::iterator> > incR(inc);
+                                GECODE_ME_CHECK(g._nodesIn(home,incR));
+                        }
+                        /** Scan all arcs in UB, if one of their endnodes is not in the nodes UB, remove it */
+                        {
+                                TRACE(cout << "remove arcs " << endl);
+                                TRACE(cout << "nodesU: ");
+                                set<int> nodesU;
+                                typename View::LubNodeIterator nvals = g.iter_nodes_UB();
+                                for (; nvals(); ++nvals){ 
+                                        TRACE(cout << nvals.val() << " ");
+                                        nodesU.insert(nvals.val());
+                                }
+                                TRACE(cout << endl);
+                                list<pair<int,int> > toremove;
+                                typename View::LubArcIterator alub = g.iter_arcs_UB();
+                                TRACE(cout << "arcs: " << endl);
+                                for (;alub();++alub){
+                                        int t,h;
+                                       boost::tie (t,h) = alub.val();
+                                        TRACE(cout <<" ("<< t<< ","<< h <<")" );
+                                        if (nodesU.find(t) == nodesU.end() || nodesU.find(h) == nodesU.end()) {
+                                                toremove.push_back(make_pair(t,h));
+                                                TRACE(cout <<"removed ");
+                                        }
+                                }
+                                TRACE(cout << endl);
+                                TRACE(cout << "removed: " << endl);
+                                StlToGecodeValIterator<list<pair<int,int> >::iterator> rem(toremove.begin(),toremove.end());
+                                GECODE_ME_CHECK(g._arcsOut(home,rem));
+                                TRACE(cout << endl);
+                        }
+                        return ES_FIX;
+                }
+};
+
+} }

@@ -1,0 +1,427 @@
+#LyX 1.5.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass book
+\language spanish
+\inputencoding auto
+\font_roman lmodern
+\font_sans default
+\font_typewriter default
+\font_default_family rmdefault
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics emtex
+\paperfontsize default
+\spacing single
+\papersize letterpaper
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\leftmargin 3cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 2cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Introducción
+\end_layout
+
+\begin_layout Standard
+El objetivo de éste capítulo es brindar una descripción del problema que
+ aborda este trabajo de grado,  justificar su solución y establecer los
+ objetivos generales y específicos que se cumplirán para su solución.
+\end_layout
+
+\begin_layout Section
+Descripción del Problema
+\end_layout
+
+\begin_layout Standard
+CP(Graph) es un librería de clases que proporciona una estructura de base
+ para desarrollar aplicaciones basadas en restricciones(un framework, en
+ inglés),  resultado de la implementación de las conclusiones y estudios
+ realizados por Gregoire Dooms en su tesis de doctorado
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+, una de las tantas aplicaciones de CP(Graph) se da en problemas relacionados
+ con Bioinformática
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\newline
+CP(Graph) facilita el planteamiento y solución de problemas de satisfacción
+ de restricciones que involucran grafos ya que permite definir variables
+ del dominio de grafos y aplicar restricciones a estas variables desde un
+ alto nivel,  sin tener que definirlas de la manera tradicional,  es decir,
+  desde el dominio de los enteros
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+explicar que significa 
+\begin_inset Quotes eld
+\end_inset
+
+desde el dominio de los enteros
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+
+\begin_inset LatexCommand cite
+key "key-15"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+La implementación de CP(Graph) fue hecha tanto sobre la librería de restriccione
+s Gecode 1.3.1 como Gecode 1.0.0,  Gecode ésta escrita en el lenguaje de programació
+n C++.
+ 
+\end_layout
+
+\begin_layout Standard
+La librería Gecode está en constante desarrollo y ha sufrido cambios en
+ su núcleo que hacen imposible usar CP(Graph) con Gecode 2.1.1,  los cambios
+ introducidos a Gecode en esta versión sin embargo , mejoran el rendimiento(perf
+omance,  en inglés), el uso de la memoria y ofrecen nuevas alternativas
+ para la definición de problemas de satisfacción de restricciones.
+\shape italic
+
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+
+\shape italic
+es cierto pero no para el aso de los grafos, por eso creo que es necesario
+ justificar la idea
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+En la arquitectura de Gecode 2.1.1 se han introducido nuevas abstracciones
+ como por ejemplo los Advisores los cuales podrían permitir mejoras sustanciales
+ en el sistema de restricciones sobre grafos.
+\end_layout
+
+\begin_layout Standard
+El registro de cambios(changelog,  en inglés)
+\begin_inset LatexCommand nomenclature
+symbol ")"
+
+\end_inset
+
+ que se lleva en la pagina de Gecode indica que los propagadores durante
+ el cambio de versión 1.3.1 a 2.0.0 mejoraron el uso de memoria de un 20% a
+ un 40% además los propagadores del dominio de los Booleanos son el doble
+ de rápidos con respecto a la versión 1.3.1 y el uso de memoria se redujo
+ a la mitad
+\begin_inset LatexCommand cite
+key "key-21"
+
+\end_inset
+
+.
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+seria bueno justificarlo, aqui estuve revisando en http://www.gecode.org/doc/2.1.1/r
+eference/PageChanges_2_0_0.html, y hay una parte en que es claro que todos
+ los propagadores mejoraron en el uso de memoria , osea los propagadores
+ para restricciones sobre varibales de conjuntos que son los que usan los
+ propagadores de cpgraph tambien mejoraron, esta parte es 
+\begin_inset Quotes eld
+\end_inset
+
+a binary propagator takes 30% less memory and a ternary propagator takes
+ 25% less memory.
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\newline
+
+\end_layout
+
+\begin_layout Standard
+El equipo de desarrollo de Gecode maneja las contribuciones de manera externa,
+  éste no asegura el soporte ni la compatibilidad de las contribuciones
+ para futuras versiones,  entonces es responsabilidad de los autores de
+ las mismas realizar los cambios pertinentes.Sin embargo, Gregoire Dooms
+ (el autor de CP(Graph)) no ha realizado,  ni realiza ninguna actualización
+ a CP(Graph)
+\begin_inset LatexCommand cite
+key "key-4"
+
+\end_inset
+
+.
+\newline
+
+\end_layout
+
+\begin_layout Standard
+La pregunta de investigación que se busca responder es entonces:
+\end_layout
+
+\begin_layout Standard
+
+\shape italic
+¿Es posible realizar una actualización de CP(Graph) de la versión 1.0.0 a
+ la versión 2.1.1 de la librería Gecode,  versión de la librería probada extensiva
+mente,  con mejoras en su arquitectura como los Advisores,  además con un
+ kernel más rápido ?
+\end_layout
+
+\begin_layout Standard
+
+\newpage
+
+\end_layout
+
+\begin_layout Section
+Justificación
+\end_layout
+
+\begin_layout Standard
+CP(Graph) es una contribución a la librería Gecode que permite reducir el
+ tiempo de análisis y la cantidad de memoria usada en el modelamiento de
+ problemas que involucre grafos y relaciones(restricciones) entre ellos
+\begin_inset LatexCommand cite
+key "key-15,key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+El tiempo de modelamiento de un problema realizado en el dominio de los
+ enteros,  se reduce de manera significativa en CP(Graph) ya que éste introduce
+ en forma nativa variables sobre las cuales se pueden aplicar diferentes
+ restricciones asociadas a grafos.
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Standard
+cambio
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+CP(Graph) además permite agregar nuevas restricciones y/o mejorar los propagador
+es.
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+revisar esta parte
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Entre las diferentes aplicaciones de CP(Graph) tenemos:
+\end_layout
+
+\begin_layout Itemize
+Problemas de Bioinformática donde se requiere estudiar las redes metabólicas,
+  las cuales se llevan a una representación en grafos y sobre estos aplican
+ ciertas restricciones
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Grafos lingüísticos,  los cuales son usados para representar lenguajes y
+ por tanto administrar la organización de los datos en diferentes clases
+ de campos científicos
+\begin_inset LatexCommand cite
+key "key-19,key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Comparaciones de patrones entre grafos diferentes y encontrar caminos de
+ Hamilton usando menor cantidad de memoria.
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Es importante para la resolución de problemas actualizar CP(Graph),  esto
+ con el objetivo de brindar una opción de alto nivel que permita realizar
+ el modelamiento de problemas con grafos,  haciendo uso de una librería
+ que involucre las ultimas técnicas
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+y cuales son esas tecnicas?o idea: enumerar solo algunas como  propagación
+ incremental, 
+\end_layout
+
+\end_inset
+
+ de restricciones en cuanto a propagadores y motores de búsqueda como lo
+ garantiza Gecode en su versión 2.1.1.
+\end_layout
+
+\begin_layout Standard
+
+\newpage
+
+\end_layout
+
+\begin_layout Section
+Objetivos
+\end_layout
+
+\begin_layout Subsection
+Objetivo General
+\end_layout
+
+\begin_layout Standard
+Desarrollar cambios de implementación a CP(Graph) que le permitan ser funcional
+ en la versión 2.1.1 de la librería Gecode.
+\end_layout
+
+\begin_layout Subsection
+Objetivos Específicos
+\end_layout
+
+\begin_layout Itemize
+Listar las diferencias entre Gecode 1.0.0 y Gecode 2.1.1 que afectan CP(Graph).
+ 
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+quite 
+\begin_inset Quotes eld
+\end_inset
+
+el nucleo
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Analizar los propagadores propuestos en 
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Diagramar los módulos,  clases e interfaces propuestas en 
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Registrar e implementar los cambios a realizar a CP(Graph) bajo gecode 2.1.1
+ .
+\end_layout
+
+\begin_layout Itemize
+Analizar y comprender los problemas solucionados en 
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+,  con el fin de validar su funcionamiento en la nueva versión.
+ 
+\end_layout
+
+\begin_layout Itemize
+Evaluar resultados obtenidos a problemas resueltos con CP(Graph) en gecode
+ 1.0.0 con respecto a los obtenidos con CP(Graph) en gecode 2.1.1.
+\end_layout
+
+\end_body
+\end_document

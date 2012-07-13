@@ -1,0 +1,173 @@
+#LyX 1.5.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass book
+\begin_preamble
+\setcounter{section}{2}
+\usepackage{color}
+\usepackage{alltt}
+\usepackage{mdwlist}
+\usepackage{lscape}
+\end_preamble
+\language spanish
+\inputencoding auto
+\font_roman lmodern
+\font_sans default
+\font_typewriter default
+\font_default_family rmdefault
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\paperfontsize default
+\spacing single
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\leftmargin 3cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 2cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Conclusiones Y Trabajo Futuro
+\end_layout
+
+\begin_layout Section
+Conclusiones
+\end_layout
+
+\begin_layout Itemize
+Se Actualizo satisfactoriamente Cp(Graph) de Gecode 1 a Gecode 2.1.1.
+ Durante la migración de versión se incluyeron restricciones no incluidas
+ ni soportadas con anterioridad en la versión oficial,  pero soportadas
+ teóricamente en la tesis de Dooms.
+ Estas restricciones son: Subgraph,  Symmetric y Undirected.
+\end_layout
+
+\begin_layout Itemize
+Se llevo acabo el diseño e implementaron de Advisores para algunos de los
+ propagadores.
+ La experimentación realizada permitió introducir la propagación incremental
+ para alguno de los propagadores,  lo que permitió a su vez la reducción
+ de tiempos de ejecución para algunos casos.
+ Sin embargo el uso de Advisores implica necesariamente el uso de más memoria
+ para la solución de los problemas.
+\end_layout
+
+\begin_layout Itemize
+Los Advisores permitieron la reducción de tiempos en la vista OutAdjSetsGraphVie
+w,  pero ocurrió lo contrario en la vista NodeArcSetsGraphView.
+\end_layout
+
+\begin_layout Itemize
+La implementacion de Advisores se hizo con un diseño Orientado a Objetos
+ para evitar encapsular la forma de subscripción de las vistas a los advisores,
+ de esta forma a los propagadores les es transparente la forma como las
+ vistas realizan la subscripción.
+\end_layout
+
+\begin_layout Itemize
+Se evaluaron los resultados obtenidos sobre ejemplos previamente disponibles
+ y también sobre variedades de ejemplos creados.
+ Se realizaron pruebas de Correctitud.
+ Pero también se compararon resultados en tiempo,  memoria de tres versiones:
+ Cp(Graph) original,  Cp(Graph) con Advisores,  Cp(Graph) Sin advisores.
+\end_layout
+
+\begin_layout Itemize
+Encontrar soluciones en el dominio de los grafos toma mucho tiempo.
+ Un cambio muy pequeño puede ocasionar que tome tiempos muy prolongados
+ el encontrar una solución,  la implementacion de Advisores puede ayudar
+ a reducir notablemente estos tiempos,  pero no solo es posible con la implement
+acion de Advisores si no,  con un replanteamiento de la representación de
+ las variables de grafos.
+\end_layout
+
+\begin_layout Itemize
+Se utilizaron y adecuaron herramientas como el autconf y automake para asegurar
+ la instalación y deployment de CP(Graph) en diferentes plataformas.
+\end_layout
+
+\begin_layout Itemize
+Al llevar Cp(Graph) a Gecode 2.1.1 con Advisores se redujeron en algunos casos
+ notablemente los tiempos,  sin embargo se necesita más experimentación,
+  conocimiento y mejoras a nivel de diseño para mejorar aun más los tiempos.
+\newpage
+
+\end_layout
+
+\begin_layout Section
+Trabajo Futuro
+\end_layout
+
+\begin_layout Standard
+En esta sección se plantean posibles mejoras que pueden ser introducidas
+ en el futuro a CP(Graph)
+\end_layout
+
+\begin_layout Subsubsection*
+Propagadores
+\end_layout
+
+\begin_layout Standard
+A pesar de que existe un soporte teórico para muchas restricciones,  muchas
+ de ellas aun necesitan ser implementadas en Cp(Graph),  actualmente la
+ diversidad de restricciones es limitada.
+ 
+\end_layout
+
+\begin_layout Subsubsection*
+Advisores
+\end_layout
+
+\begin_layout Standard
+La implementacion de más Advisores para los propagadores existentes,  además
+ de GraphDeltas.
+ La inclusión de GraphDeltas ayudaría a tener un modelamiento más limpio
+ durante la implementacion de nuevos Advisores.
+\end_layout
+
+\begin_layout Standard
+La identificación de cuando no son necesarios los escaneos completos puede
+ mejorar notablemente los tiempos de los propagadores.
+\end_layout
+
+\begin_layout Subsubsection*
+Copia Perezosa
+\end_layout
+
+\begin_layout Standard
+Durante la clonacion de variables de Grafos de un espacio a otro,  si la
+ variable tiene un conjunto de aristas y nodos muy grande,  la copia es
+ muy costosa.
+ Para estos casos es mejor tener una estructura adicional que describa los
+ cambios que ocurrieron entre un espacio y otro.
+ Cuando la estructura adicional ya tenga un tamaño determinado,  entonces
+ si se realiza la copia de la variable de grafos.
+ ( Propuesta e Idea por Gustavo Gutierrez)
+\end_layout
+
+\end_body
+\end_document

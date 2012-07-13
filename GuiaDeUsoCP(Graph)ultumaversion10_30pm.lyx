@@ -1,0 +1,1010 @@
+#LyX 1.5.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass report
+\begin_preamble
+\usepackage{lscape}
+\end_preamble
+\language english
+\inputencoding auto
+\font_roman lmodern
+\font_sans default
+\font_typewriter default
+\font_default_family rmdefault
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\paperfontsize default
+\spacing single
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\leftmargin 2cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 3cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+
+\lang spanish
+Guía Sobre Uso de CP(Graph) Actualizado(Para Gecode 2.1.1) y de CP(Graph)
+ Original(Para Gecode 1.0.0) en Linux(probada en Ubuntu 8.04)
+\end_layout
+
+\begin_layout Author
+
+\lang spanish
+José Luis Pulido Burbano
+\newline
+David Alejandro Przybilla
+\end_layout
+
+\begin_layout Date
+
+\lang spanish
+Miercoles 6 Mayo de 2009
+\end_layout
+
+\begin_layout Chapter
+
+\lang spanish
+Introducción
+\end_layout
+
+\begin_layout Standard
+
+\lang spanish
+Esta guía se crea con el objetivo de capacitar al usuario para :
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Usar CP(Graph) para Gecode 1.0.0 y Gecode 2.1.1 dentro de la misma sesión en
+ Linux.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Construir , ejecutar y almacenar automáticamente los resultados de la ejecución
+ de los ejemplos diseñados para las pruebas de CP(Graph) actualizado y original.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+A partir de los resultados obtenidos de la ejecución de los ejemplos diseñados
+ para las pruebas, ser capaz de generar datos con estadísticas de la ejecución
+ de manera automática.
+\end_layout
+
+\begin_layout Paragraph
+
+\lang spanish
+Descripción de cada capitulo
+\newline
+
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+El segundo capitulo enseña como instalar gecode 2.1.1 y CP(Graph) actualizado.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+El tercer capitulo enseña como instalar Gecode 1.0.0 y CP(Graph) original.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+El cuarto capitulo enseña como compilar, ejecutar y almacenar los resultados
+ de los ejemplos de prueba para ambas versiones de CP(Graph).
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+El quinto capitulo enseña como obtener las estadísticas(tiempo promedio
+ de ejecución, tamaño promedio de uso de memoria) para los resultados de
+ cada ejemplo.
+\end_layout
+
+\begin_layout Standard
+
+\lang spanish
+Notas Importantes:
+\end_layout
+
+\begin_layout Itemize
+Al tiempo solo es posible tener una versión de CP(Graph) instalada , instalada
+ se refiere a tener las librerías compartidas de Gecode y CP(Graph) y su
+ código fuente en directorios conocidos por Linux, si en un momento dado
+ se tiene una versión de CP(Graph) y Gecode Instaladas y se desea instalar
+ otra versión se deben de eliminar las librerías compartidas y código fuente
+ del CP(Graph) y Gecode instalados actualmente de las ubicaciones conocidas
+ por Linux, más adelante se explicara cuales son estas ubicaciones o directorios.
+\end_layout
+
+\begin_layout Standard
+
+\lang spanish
+
+\newpage
+
+\end_layout
+
+\begin_layout Chapter
+
+\lang spanish
+Pasos para instalar Gecode 2.1.1 y CP(Graph) actualizado(aplica para CP(Graph)
+ con y sin advisores):
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Descargar Gecode 2.1.1 desde http://www.gecode.org/download/gecode-2.1.1.zip
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Antes de compilar Gecode 2.1.1 y CP(Graph) actualizado en Linux , se necesita
+ tener los siguientes paquetes instalados
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\lang spanish
+bash-compatible shell.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+make.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+sed.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+cp.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+tar.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Autoconf.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+libboost-graph-dev(Boost C++ Libraries development files)> 1.33.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Gcc > 4.0.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+libqt4-dev(Qt 4 development file).
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\lang spanish
+Descomprimir gecode-2.1.1.zip esto genera la carpeta Gecode-2.1.1 dentro de la
+ cual debe ubicarse usando la consola.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+En la carpeta cpgraph encontrara dos archivos :
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\lang spanish
+cpgraph_conAdvisores.tar.gz : el codigo fuente de cpgraph modificado con Advisores
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+cpgraph_sinAdvisores.tar.gz : el codigo fuente de cpgraph modificado sin Advisores
+\end_layout
+
+\begin_layout Standard
+
+\lang spanish
+descomprima, segun cual cpgraph desea instalar ,el archivo tar.gz dentro
+ de la carpeta contribs de Gecode-2.1.1 que descomprimio en el paso 3.
+ Al final de este paso deberia tener la carpeta graph dentro de la carpeta
+ contribs.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\lang spanish
+Eliminar la contribución Qecode de la carpeta contribs.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Ejecutar por consola los siguientes comandos 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\family typewriter
+\lang spanish
+make -f Makefile.contribs
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+\lang spanish
+./configure --enable-contribs --enable-examples --enable-gist
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+\lang spanish
+make
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+\lang spanish
+sudo make install
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\lang spanish
+Copiar la carpeta con el código fuente de graph actualizado en la ubicación
+ /usr/local/include/, la anterior es una ubicación conocida por Linux.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Luego de esto debería de tener los ejemplos de CP(Graph) actualizado(en
+ contribs/graph/examples) contruidos(su ejecutable generado), para poder
+ ejecutarlos debe copiar la librería compartida(archivos con extensión .so)
+ que se encuentran en la carpeta Gecode-2.1.1/contribs/graph a la ubicación
+ /usr/lib/, la anterior es una ubicación conocida por Linux.
+ 
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Copiar la carpeta Gecode2.1.1/examples en la ubicación /usr/local/include/gecode.
+\end_layout
+
+\begin_layout Chapter
+
+\lang spanish
+Pasos para Instalar Gecode 1.0.0 junto con CP(Graph):
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Descargar Gecode 1.0.0(viene con CP(Graph) incluido) desde http://www.gecode.org/dow
+nload/gecode-1.0.0.zip.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Antes de compilar Gecode 1.0.0 y CP(Graph) en Linux , se necesita tener los
+ siguientes paquetes instalados
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\lang spanish
+bash-compatible shell.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+make.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+sed.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+cp.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+tar.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Autoconf.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+libboost-graph-dev(Boost C++ Libraries development files)> 1.33.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Gcc > 4.0.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\lang spanish
+Descomprimir gecode-1.0.0.zip esto genera la carpeta Gecode-1.0.0, dentro de
+ la cual debe ubicarse usando la consola.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Modificar el archivo Makefile.contribs en la siguiente linea 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\lang spanish
+sed -e "s|
+\backslash
+(dnl @CONTRIBS@
+\backslash
+)|AC_GECODE_ENABLE_CONTRIB($${i
+\color green
+/
+\color inherit
+*
+\backslash
+/},
+\backslash
+"$$DESC 
+\newline
+
+\backslash
+",[]) 
+\backslash
+1|g" 
+\backslash
+
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+cambiarla por :
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+sed -e "s|
+\backslash
+(dnl @CONTRIBS@
+\backslash
+)|AC_GECODE_ENABLE_CONTRIB($${i
+\color green
+#
+\color inherit
+*
+\backslash
+/},
+\backslash
+"$
+\newline
+$DESC
+\backslash
+",[]) 
+\backslash
+1|g" 
+\backslash
+ 
+\end_layout
+
+\begin_layout Standard
+
+\lang spanish
+Nota:lo único que cambia es un / por un #.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\lang spanish
+Elimine la contribución Map(no es necesaria), es decir borre la carpeta
+ Gecode-1.0.0/contribs/map.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Ejecutar por consola los siguientes comandos 
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+
+\lang spanish
+Nota:
+\shape italic
+\color black
+En esta versión de CP(Graph) durante la ejecución del comando make se generara
+ un error, sin embargo la librería compila y enlaza de manera adecuada.
+ Cuando el error aparezca por favor escribir de nuevo el comando make en
+ la consola para que los ejemplos se terminen de compilar y enlazar.
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+\lang spanish
+make -f Makefile.contribs
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+\lang spanish
+./configure --enable-contribs --enable-examples
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+\lang spanish
+make
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+\lang spanish
+sudo make install
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+
+\lang spanish
+Copiar la carpeta con el código fuente de graph actualizado en la ubicación
+ /usr/local/include/.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+Luego de esto debería de tener los ejemplos de CP(Graph) actualizado(en
+ contribs/graph/examples) construidos, para poder ejecutarlos copiar las
+ librería compartida(archivos con extensión .so y sus enlaces) de CP(Graph)
+ a la ubicación /usr/lib/.
+\end_layout
+
+\begin_layout Chapter
+
+\lang spanish
+Ejecución de pruebas
+\end_layout
+
+\begin_layout Standard
+
+\lang spanish
+Para trabajar sobre el código de las pruebas ya sea generando los ejecutables
+ o ejecutando y guardando las salidas en archivos de texto para revisarlas,
+ se necesita haber realizado los pasos del capitulo2 o capitulo3, es decir,
+ se necesita tener instalada(librerías compartidas en /usr/lib y código
+ fuente de graph y gecode en /usr/local/include) al menos una versión de
+ CP(Graph) y por ende de Gecode y hacer lo siguiente:
+\end_layout
+
+\begin_layout Itemize
+
+\shape italic
+\lang spanish
+Si se va a trabajar sobre las pruebas para CP(Graph) original
+\shape default
+.
+ Copiar las dos carpetas(pruebas_correctitud y pruebas_rendimiento) que
+ se encuentran en la carpeta Pruebas, con el código fuente de las pruebas
+ para Graph original en /Gecode1.0.0/contribs/graph/examples.
+\end_layout
+
+\begin_layout Itemize
+
+\shape italic
+\lang spanish
+Si va a trabajar sobre las pruebas para CP(Graph) modificado
+\shape default
+.
+ Copiar las dos carpetas(pruebas_correctitud y pruebas_rendimiento) que
+ se encuentran en la carpeta Pruebas, con el código fuente de las pruebas
+ para graph Actualizado en /Gecode2.1.1/contribs/graph/examples.
+\end_layout
+
+\begin_layout Standard
+
+\lang spanish
+Para automatizar la construcción , ejecución y almacenamiento de los resultados
+ en archivos de texto de las pruebas , se diseño un Bourne-Again shell script
+ llamado ayuda_script, para utilizarlo seguir los siguientes pasos:
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Copiar el script en la carpeta /bin.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Dar permisos de ejecución al script con el comando : chmod +x script_ayuda.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Ajustar las rutas del script para la instalación propia, para esto abrir
+ el script con un editor como Gedit y modificar las 4 variables rutaGeco1,carpEj
+emGrapOrig,rutaCarpEjemGrapActu y carpEjemGrapActu que están dentro de la
+ función setParametros.
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\lang spanish
+rutaGeco1:Ruta de Gecode 1.0.0 sin / al final.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+carpEjemGrapOrig: Nombre de carpeta de pruebas sobre la que se va a trabajar,
+ esta puede ser pruebas_correctitud o pruebas_rendimiento.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+rutaCarpEjemGrapActu: Ruta de directorio con las carpetas de pruebas (es
+ decir , que contiene las carpetas pruebas_correctitud y pruebas_rendimiento)
+ para Graph actualizado sin / al final.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+carpEjemGrapActu:Nombre de carpeta de pruebas sobre la que se va a trabajar,
+ esta puede ser pruebas_correctitud o pruebas_rendimiento.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Para ejemplificar el uso del anterior script, veamos este escenario:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Se descargo Gecode-1.0.0 y se lo copio y descomprimió en la ubicación 
+\lang spanish
+/home/josel/Desktop/untitledfolder2/.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Se descargo Gecode-2.1.1 y se lo copio y descomprimió en la ubicación /home/josel/
+Desktop/untitledfolder/.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Se eligió instalar Gecode-2.1.1 con CP(Graph) actualizado, es decir, se realizaron
+ los pasos del capitulo 2, además se copiaron las dos carpetas con el código
+ fuente de las pruebas (pruebas_correctitud y pruebas_rendimiento) en la
+ carpeta examples la cual esta ubicada en 
+\newline
+/home/josel/Desktop/untitledfolder/Gec
+ode-2.1.1/contribs/graph/ y por ultimo se eligió trabajar primero con los
+ ejemplos en la carpeta de pruebas_correctitud.
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\lang spanish
+Las cuatro variables anteriormente descritas tendrían las siguientes rutas:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\lang spanish
+rutaGeco1: En éste caso no se modificaría ya que se va a trabajar sobre
+ el código de las pruebas de CP(Graph) actualizado.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+carpEjemGrapOrig:En éste caso no se modificaría ya que se va a trabajar
+ sobre el código de las pruebas de CP(Graph) actualizado.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+rutaCarpEjemGrapActu:/home/josel/Desktop/untitledfolder/Gecode-2.1.1/contribs/grap
+h/examples
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+carpEjemGrapActu: pruebas_correctitud.
+\end_layout
+
+\end_deeper
+\end_deeper
+\end_deeper
+\begin_layout Itemize
+Si se deseara construir(generar ejecutables) y ejecutar y almacenar los
+ resultados de todos los ejemplos que están en la carpeta pruebas_correctitud
+ se debería hacer:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+./ayuda_script a todos a , donde la primera a se refiere a construir ,ejecutar
+ y almacenar los resultados , todos se refiere a hacer la anterior acción
+ sobre todos los ejemplos y la ultima a se refiere a hacer la acción sobre
+ la carpeta pruebas_correctitud de CP(Graph) actualizado, luego de que se
+ construyan los ejemplos, el script solicitara un número de iteraciones
+ este valor se refiere a cuantas veces se desea ejecutar cada ejemplo, por
+ ejemplo si se da el valor 5 se ejecutaría cada ejemplo 5 veces.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Si se deseara solo construir(generar ejecutable) de el ejemplo uno que esta
+ en la carpeta pruebas_correctitud se debería hacer: 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+./ayuda_script c 1 a , donde c se refiere a construir , 1 al numero del ejemplo
+ y la a se refiere a hacer la acción sobre la carpeta pruebas_correctitud
+ de CP(Graph) actualizado.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Si se deseara solo ejecutar y almacenar los resultados de la ejecución de
+ todos los ejemplos que están en la carpeta pruebas_correctitud se debería
+ hacer: 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+./ayuda_script e todos a , donde c se refiere a construir , 1 al numero del
+ ejemplo y la a se refiere a los ejemplos en CP(Graph) actualizado, luego
+ de que se construyan los ejemplos, el script solicitara un número de iteracione
+s este valor se refiere a cuantas veces se desea ejecutar cada ejemplo,
+ por ejemplo si se da el valor 5 se ejecutaría cada ejemplo 5 veces.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Si se deseara hacer lo mismo pero sobre la carpeta pruebas_rendimiento para
+ CP(Graph) original 
+\lang spanish
+,adicionalmente a haber seguido el capitulo 3 , copiar las dos carpetas
+ con el código fuente de las pruebas (pruebas_correctitud y pruebas_rendimiento)
+ para CP(Graph) original en la carpeta examples que esta en /home/josel/Desktop/
+untitledfolder2/Gecode-1.0.0/contribs/graph/ y 
+\lang english
+modificar las variables uno y dos , éstas quedarían de la siguiente forma:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\lang spanish
+rutaGeco1: /home/josel/Desktop/untitledfolder2/Gecode-1.0.0.
+\end_layout
+
+\begin_layout Enumerate
+
+\lang spanish
+carpEjemGrapOrig:pruebas_rendimiento.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Notas importantes:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Ahora como se va a trabajar sobre las pruebas de CP(Graph) original en el
+ ultimo argumento que se pasa al script en vez de ir una a de actualizada
+ debería ir una o de original , es decir ./ayuda_script e 1 o.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Ejecutar el script con el comando ./ayuda_script si esta opción no lo ejecuta
+ probar con solo el nombre del script , es decir, ejecutar ayuda_script.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Si la ejecución del script se hace sin argumentos se vera la siguiente informaci
+ón en la consola:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+
+\lang spanish
+Ningún argumento obtenido 
+\end_layout
+
+\begin_layout Standard
+
+\lang spanish
+Trate 'ayuda_script help' para más información
+\end_layout
+
+\begin_layout Standard
+
+\lang spanish
+Esto quiere decir que no se proporcionaron argumentos al script.
+\end_layout
+
+\begin_layout Standard
+
+\lang spanish
+para mas información sobre el uso del script consultar la ayuda del script
+ ejecutándolo con el parámetro help.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\lang spanish
+El script al construir los ejemplos(generar el ejecutable) crear una carpeta
+ que se llama ejecutable, para ejecutar los ejemplos , copiar los archivos
+ de texto con los grafos dentro de esta carpeta.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Los ejemplos se diseñaron siguiendo una secuencia es decir ,por ejemplo
+ 1 ,2 ,3 ,4 ,5 ,6,7 y 8 en algunos casos elementos de esa secuencia no están
+ como los ejemplos 6 y 7 pero al dar la opción de ejecutar todos al script_ayuda
+ se generan las carpeta de salidas para estos ejemplos sin información útil.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Cada ejemplo maneja en algunos casos solo una vista o ambas.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+El script al ejecutar los ejemplos solicita un numero de iteraciones , si
+ se dan 5 iteraciones por ejemplo, entonces se ejecutara cada ejemplo 5
+ veces y las soluciones se guardaran en un archivo de texto dentro de una
+ carpeta por cada ejemplo.
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Standard
+
+\newpage
+
+\end_layout
+
+\begin_layout Section*
+
+\lang spanish
+Compilación y enlace de un programa que usa CP(Graph) original o actualizado
+ 
+\end_layout
+
+\begin_layout Standard
+
+\lang spanish
+Si se esta trabajando en un IDE como Eclipse CDT configurar el proyecto
+ de la siguiente forma :
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+En los directorios del compilador GCC C++ incluir:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\lang spanish
+/usr/local/include/gecode
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+/usr/local/include/graph
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Para el enlazador GCC C++ adicionar:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Si el programa usa CP(Graph) original:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+En el área de linker flags incluir las siguientes librerías: -lgecodegraph
+ -lgecodesearch -lgecodeminimodel -lgecodeserialization -lgecodecpltset
+ -lgecodeset -lgecodeint -lgecodekernel -lgecodesupport.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Si el programa usa CP(Graph) actualizado:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+En el área de linker flags incluir las siguientes librerías: -lgecodegraph
+ -lgecodesearch -lgecodeminimodel -lgecodeserialization -lgecodecpltset
+ -lgecodeset -lgecodeint -lgecodekernel -lgecodegist -lgecodesupport.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+En el área de other options (-Xlinker [option]) incluir:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+/usr/local/include/gecode/examples/support/options.o
+\end_layout
+
+\begin_layout Itemize
+/usr/local/include/gecode/examples/support/example.o
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Chapter
+
+\lang spanish
+Obtención de estadísticas
+\end_layout
+
+\begin_layout Standard
+
+\lang spanish
+Si se desea sacar las estadísticas para resultados obtenidos de script_ayuda
+ al ejecutar los ejemplos , se pueden usar dos pequeños programas escritos
+ en Python, para ejecutarlos usar la siguiente sintaxis:
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Si se va a trabajar sobre resultados de los ejemplos de CP(Graph) original:
+\family typewriter
+ python promedios.py --d
+\newline
+ ruta_de_carpeta_con_archivo_de_salida_de_script_ayuda.
+\end_layout
+
+\begin_layout Itemize
+
+\lang spanish
+Si se va a trabajar sobre resultados de los ejemplos de CP(Graph) actualizado:
+ 
+\family typewriter
+python promediosGec2.py
+\newline
+ --d ruta_de_carpeta_con_archivo_de_salida_de_script_ayuda.
+\end_layout
+
+\end_body
+\end_document

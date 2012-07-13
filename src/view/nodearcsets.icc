@@ -1,0 +1,580 @@
+
+/*
+ *  Main authors:
+ *     Gr�goire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Gr�goire Dooms (Universit� catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2006-01-26 14:18:00 +0100 (Thu, 26 Jan 2006) $
+ *     $Revision: 318 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+
+
+#include <stdio.h>
+#include <vector>
+#include <list>
+#include <iostream>
+#include <fstream>
+#include <boost/graph/strong_components.hpp>
+#include <boost/graph/graphviz.hpp>
+#include <boost/graph/graph_utility.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/topological_sort.hpp>
+#include <boost/graph/depth_first_search.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <boost/graph/visitors.hpp>
+#include "graph.hh"
+#include "prop.icc"
+//using namespace boost;
+//using namespace std;
+
+namespace Gecode { namespace Graph {
+
+template <class ArcNode>
+NodeArcSetsGraphViewT<ArcNode>::NodeArcSetsGraphViewT(){
+}
+
+template <class ArcNode>
+NodeArcSetsGraphViewT<ArcNode>::NodeArcSetsGraphViewT(const NodeArcSetsGraphViewT<ArcNode>& x): nodes(x.nodes), arcs(x.arcs), an(x.an){
+}
+
+template <class ArcNode>
+NodeArcSetsGraphViewT<ArcNode>::NodeArcSetsGraphViewT(Space *home, SetVar nodes, SetVar arcs,ArcNode *arcnode): nodes(nodes), arcs(arcs), an(arcnode){
+    arcImpliesNodes(home);
+}
+template <class ArcNode>
+NodeArcSetsGraphViewT<ArcNode>::NodeArcSetsGraphViewT(Space *home, int numNodes,ArcNode *arcnode): nodes(home,IntSet::empty,0,numNodes-1) {
+    if (arcnode==NULL){
+        an = new ArcNode(numNodes);
+    }else {an=arcnode;}
+
+    int arcIds[numNodes*numNodes];
+    for (int i=0;i<numNodes; ++i){
+        for (int j=0;j<numNodes; ++j){
+                arcIds[i*numNodes+j] = an->id(i,j);
+        }
+    }
+    IntSet lub(arcIds,numNodes*numNodes);
+
+    arcs = SetVar(home, IntSet::empty,0,an->max_arc());
+    
+    arcImpliesNodes(home);
+}
+#ifndef  TRACE
+#define TRACE
+#endif
+template <class ArcNode>
+NodeArcSetsGraphViewT<ArcNode>::NodeArcSetsGraphViewT(Space *home, const pair<vector<int>,vector<pair<int,int> > >& graph,ArcNode* arcnode){
+//FIXME node values ignored, still have to translate nodes to [0, numNodes-1]
+
+	 const vector<pair<int,int> >& arcsV =  graph.second;
+     int numNodes = graph.first.size();
+     if (arcnode==NULL){
+             arcnode = new DefaultArcNode(numNodes);
+     }
+     an = arcnode;
+     int numarcs = arcsV.size();
+     std::vector<int> arcids(numarcs);
+     std::vector<std::pair<int,int> >::const_iterator it = arcsV.begin();
+     for  (int i=0;  it != arcsV.end(); ++it, ++i){
+             arcids[i] = an->id(it->first,it->second);
+     }
+
+	        // Create the nodes variable
+	         nodes=SetVar(home, IntSet::empty, 0, numNodes-1);
+	        // update the nodes var
+	         // nodes = nodesVar;
+
+	         // create the arcs variable
+	        sort(arcids.begin(),arcids.end());
+	        IntSet a(&arcids[0], numarcs);
+	        arcs = SetVar(home, IntSet::empty, a);
+	        arcImpliesNodes(home);
+
+}
+
+template <class ArcNode>
+void NodeArcSetsGraphViewT<ArcNode>::distrib(Space * home){ //FIXME
+  
+
+        SetVarArray args(home,2);
+        Gecode::rel (home, args[0], SRT_EQ , arcs);
+        Gecode::rel (home, args[1], SRT_EQ , nodes);
+
+
+        branch(home,args,SET_VAR_NONE, SET_VAL_MIN);
+}
+
+template <class ArcNode>
+void NodeArcSetsGraphViewT<ArcNode>::subscribe(Space* home, Propagator* p,Council< nameAdvisor2 >* co ,int graph_id){
+
+			 Set::SetView nodesV1(nodes);
+ 			//nodes are subscribed, nodes name is "1"                    	
+			(void) new (home) nameAdvisor2(home,p,*co,nodesV1,1,-1,graph_id);
+                       //arcs are subscribed, arcs name is "2"
+                       	(void) new (home) nameAdvisor2(home,p,*co, arcs,2,-1,graph_id);
+                        
+}
+template <class ArcNode>
+std::pair<int,int> NodeArcSetsGraphViewT<ArcNode>::getArc(nameAdvisor2 advisor,const Gecode::Set::SetDelta* delta)
+{
+	//we make sure we are handling an advisor which refers to an arc
+	if(advisor.nombre==2)
+	{
+		
+		if(delta->glbAny()==0)
+		{
+			int arista=delta->glbMin();
+			
+			return an->end_nodes(arista);
+		}
+		if(delta->lubAny()==0)
+		{
+			int arista=delta->lubMin();
+			
+			return an->end_nodes(arista);
+		}
+		
+
+	}
+	std::pair<int,int> sal(-1,-1);
+	return sal;
+	
+}
+
+template <class ArcNode>
+void NodeArcSetsGraphViewT<ArcNode>::arcImpliesNodes(Space * home){
+        ArcImpliesNodes<NodeArcSetsGraphViewT<ArcNode> >::post(home,*this);
+}
+
+template <class ArcNode>
+void NodeArcSetsGraphViewT<ArcNode>::instantiateUB(Space * home){
+
+       Set::SetView a(arcs);
+	GECODE_ME_FAIL(home,a.cardMin(home,a.cardMax()));
+        assert(arcs.assigned());
+        Set::SetView n(nodes);
+	GECODE_ME_FAIL(home,n.cardMin(home,n.cardMax()));
+        assert(nodes.assigned());
+}
+
+
+
+/** Stuff for propagators */
+
+/** Returns the PropCond for the nodes and the arcs according to the graph propCond*/
+template <class ArcNode>
+std::pair<PropCond,PropCond> NodeArcSetsGraphViewT<ArcNode>::pc_g_to_set(PropCond pc){
+    return make_pair(Set::PC_SET_ANY,Set::PC_SET_ANY);
+}
+/** subscribes all implem variables with the propagator */
+template <class ArcNode>
+void NodeArcSetsGraphViewT<ArcNode>::subscribe(Space* home, Propagator* p, PropCond pc){
+        PropCond npc,apc;
+       boost::tie(npc,apc) = pc_g_to_set(pc);
+        Set::SetView nodesV(nodes);
+        nodesV.subscribe(home,p,npc);
+        Set::SetView arcsV(arcs);
+        arcsV.subscribe(home,p,apc);
+}
+
+
+template <class ArcNode>
+void NodeArcSetsGraphViewT<ArcNode>::cancel(Space* home,Propagator* p, PropCond pc){
+        PropCond npc,apc;
+       boost::tie(npc,apc) = pc_g_to_set(pc);
+        Set::SetView arcsV(arcs);
+        arcsV.cancel(home,p,apc);
+        Set::SetView nodesV(nodes);
+        nodesV.cancel(home,p,npc);
+}
+
+
+
+template <class ArcNode>
+void NodeArcSetsGraphViewT<ArcNode>::update(Space* home, bool share, NodeArcSetsGraphViewT<ArcNode>& x){
+        arcs.update(home, share, x.arcs);
+        nodes.update(home, share, x.nodes);
+        an = x.an;
+
+}
+/* basic tells for propagators */
+template <class ArcNode>
+forceinline ModEvent NodeArcSetsGraphViewT<ArcNode>::_arcIn(Space* home, int a, int b){
+#ifdef CPGCHECKTELLS
+        bool in = && ! arcIsInLB(a,b);
+        if (! arcIsInUB(a,b)){
+                TRACE(cout << "returning arcIn" << a << " "<< b<< " ME_GRAPH_FAILED"<< endl);
+                return Set::ME_GRAPH_FAILED;
+        }   //XXX
+
+        if (arcIsInLB(a,b)){
+                TRACE(cout << "returning arcIn" << a << " "<< b<< " ME_GRAPH_NONE"<< endl);
+                return Set::ME_GRAPH_NONE;
+        }   //XXX
+#endif
+        Set::SetView av(arcs);
+        return av.include(home,an->id(a,b));
+}
+
+template <class ArcNode>
+forceinline ModEvent NodeArcSetsGraphViewT<ArcNode>::_arcOut(Space* home, int a, int b){
+#ifdef CPGCHECKTELLS
+        if (arcIsInLB(a,b)){
+                TRACE(cout << "returning arcOut" << a << " "<< b<< " ME_GRAPH_FAILED"<< endl);
+                return Set::ME_GRAPH_FAILED;
+        }   //XXX
+        if (!arcIsInUB(a,b)){
+                TRACE(cout << "returning arcOut" << a << " "<< b<< " ME_GRAPH_NONE"<< endl);
+                return Set::ME_GRAPH_NONE;
+        }   //XXX
+#endif
+
+        Set::SetView av(arcs);
+        return av.exclude(home,an->id(a,b));
+}
+template <class ArcNode>
+forceinline ModEvent NodeArcSetsGraphViewT<ArcNode>::_nodeIn(Space* home, int a){
+#ifdef CPGCHECKTELLS
+        if (!nodeIsInUB(a)){
+                TRACE(cout << "returning nodeIn" << a <<  " ME_GRAPH_FAILED"<< endl);
+                return Set::ME_GRAPH_FAILED;
+        }   //XXX
+        if (nodeIsInLB(a)){
+                TRACE(cout << "returning nodeIn" << a <<  " ME_GRAPH_NONE"<< endl);
+                return Set::ME_GRAPH_NONE;
+        }   //XXX
+#endif
+        Set::SetView v(nodes);
+        return v.include(home,a);
+}
+
+template <class ArcNode>
+forceinline ModEvent NodeArcSetsGraphViewT<ArcNode>::_nodeOut(Space* home, int a){
+#ifdef CPGCHECKTELLS
+        if (nodeIsInLB(a)){
+                TRACE(cout << "returning nodeOut" << a <<  " ME_GRAPH_FAILED"<< endl);
+                return Set::ME_GRAPH_FAILED;
+        }   //XXX
+        if (!nodeIsInUB(a)){
+                TRACE(cout << "returning nodeOut" << a <<  " ME_GRAPH_NONE"<< endl);
+                return Set::ME_GRAPH_NONE;
+        }   //XXX
+#endif
+        Set::SetView v(nodes);
+        return v.exclude(home,a);
+}
+template <class ArcNode>
+template <class It>
+forceinline ModEvent NodeArcSetsGraphViewT<ArcNode>::_nodesOut(Space* home, It &i){
+        Iter::Values::ToRanges<It> r(i);
+        Set::SetView v(nodes);
+        return v.excludeI(home,r);
+}
+template <class ArcNode>
+template <class It>
+forceinline ModEvent NodeArcSetsGraphViewT<ArcNode>::_nodesIn(Space* home, It &i){
+        Iter::Values::ToRanges<It> r(i);
+        Set::SetView v(nodes);
+        return v.includeI(home,r);
+}
+template <class ArcNode>
+template <class It>
+forceinline ModEvent NodeArcSetsGraphViewT<ArcNode>::_arcsIn(Space* home, It &i){
+        PairToArcIdGecodeIterator<It> i2(an,i);
+        Iter::Values::ToRanges<PairToArcIdGecodeIterator<It> > i3(i2);
+        Set::SetView v(arcs);
+        return v.includeI(home,i3);
+}
+template <class ArcNode>
+template <class It>
+forceinline ModEvent NodeArcSetsGraphViewT<ArcNode>::_arcsOut(Space* home, It &i){
+        PairToArcIdGecodeIterator<It,ArcNode> i2(an,i);
+        Iter::Values::ToRanges<PairToArcIdGecodeIterator<It> > i3(i2);
+        Set::SetView v(arcs);
+        return v.excludeI(home,i3);
+}
+/// \brief Arc iterator for the NodeArcSetsGraphView
+template <class ArcNode>
+template <class It>
+class NodeArcSetsGraphViewT<ArcNode>::_int_pair_gecode_iterator_2vars {
+        const NodeArcSetsGraphViewT<ArcNode> *gp;
+        int N;
+        It arcRanges; //no matching function for call to 'Gecode::Iter::Ranges::ToValues<Gecode::SetVarGlbRanges>::ToValues(Gecode::SetVarGlbRanges)
+        Iter::Ranges::ToValues<It> arcIter;
+        public:
+        	
+        _int_pair_gecode_iterator_2vars(const NodeArcSetsGraphViewT<ArcNode>* g): gp(g),N(0),arcRanges(g->arcs),arcIter(arcRanges) {}
+
+        bool operator() (void) { // has next
+                return  arcIter();
+        }
+        pair<int,int>  val (void){
+                return gp->an->end_nodes(arcIter.val());
+        }
+
+        void operator++ (void){ // go to next
+                ++arcIter;
+        }
+};
+
+template <class ArcNode>
+forceinline
+typename NodeArcSetsGraphViewT<ArcNode>::GlbArcIterator NodeArcSetsGraphViewT<ArcNode>::iter_arcs_LB() const {
+	  typename NodeArcSetsGraphViewT<ArcNode>::GlbArcIterator  it(this);
+        return it;
+}
+
+template <class ArcNode>
+forceinline
+typename NodeArcSetsGraphViewT<ArcNode>::LubArcIterator NodeArcSetsGraphViewT<ArcNode>::iter_arcs_UB() const {
+	  typename  NodeArcSetsGraphViewT<ArcNode>::LubArcIterator  it(this);
+        return it;
+}
+template <class ArcNode>
+forceinline
+typename NodeArcSetsGraphViewT<ArcNode>::GlbNodeRangesIterator NodeArcSetsGraphViewT<ArcNode>::iter_nodes_ranges_LB() const{
+        SetVarGlbRanges l(nodes);
+        return l;
+}
+template <class ArcNode>
+forceinline
+typename NodeArcSetsGraphViewT<ArcNode>::LubNodeRangesIterator NodeArcSetsGraphViewT<ArcNode>::iter_nodes_ranges_UB() const{
+        SetVarLubRanges u(nodes);
+        return u;
+}
+template <class ArcNode>
+forceinline
+typename NodeArcSetsGraphViewT<ArcNode>::GlbNodeIterator NodeArcSetsGraphViewT<ArcNode>::iter_nodes_LB() const{
+        SetVarGlbRanges l(nodes);
+        Iter::Ranges::ToValues<SetVarGlbRanges> lv(l) ;
+        return lv;
+}
+template <class ArcNode>
+forceinline
+typename NodeArcSetsGraphViewT<ArcNode>::LubNodeIterator NodeArcSetsGraphViewT<ArcNode>::iter_nodes_UB() const{
+        SetVarLubRanges u(nodes);
+        Iter::Ranges::ToValues<SetVarLubRanges> uv(u);
+        return uv;
+}
+
+/* Reflexion */
+template <class ArcNode>
+int NodeArcSetsGraphViewT<ArcNode>::lubOrder() const{
+        return nodes.lubSize();
+}
+template <class ArcNode>
+int NodeArcSetsGraphViewT<ArcNode>::glbOrder() const{
+        return nodes.glbSize();
+}
+template <class ArcNode>
+int NodeArcSetsGraphViewT<ArcNode>::lubSize() const{
+        return arcs.lubSize();
+}
+template <class ArcNode>
+int NodeArcSetsGraphViewT<ArcNode>::glbSize() const{
+        return arcs.glbSize();
+}
+template <class ArcNode>
+int NodeArcSetsGraphViewT<ArcNode>::maxNodeId() const{
+        return nodes.lubMax();
+}
+template <class ArcNode>
+bool NodeArcSetsGraphViewT<ArcNode>::nodeIsInUB(int a) const{
+        return !nodes.notContains(a);
+}
+template <class ArcNode>
+bool NodeArcSetsGraphViewT<ArcNode>::nodeIsInLB(int a) const{
+        return nodes.contains(a);
+}
+template <class ArcNode>
+bool NodeArcSetsGraphViewT<ArcNode>::arcIsInUB(int a, int b) const{
+        return ! arcs.notContains(an->id(a,b));
+
+}
+template <class ArcNode>
+bool NodeArcSetsGraphViewT<ArcNode>::arcIsInLB(int a, int b) const{
+        return  arcs.contains(an->id(a,b));
+}
+template <class ArcNode>
+void NodeArcSetsGraphViewT<ArcNode>::inNeighboursUB(int a, vector<int> &nei) const{
+        SetVarLubRanges nodesU(nodes);
+        Iter::Ranges::ToValues<SetVarLubRanges> nodesIter(nodesU);
+        nei.clear();
+        for (; nodesIter(); ++nodesIter){
+                int i = nodesIter.val();
+                if (arcIsInUB(i,a))
+                        nei.push_back(i);
+        }
+}
+
+template <class ArcNode>
+void NodeArcSetsGraphViewT<ArcNode>::inNeighboursLB(int a, vector<int> &nei) const{
+        SetVarGlbRanges nodesL(nodes);
+        Iter::Ranges::ToValues<SetVarGlbRanges> nodesIter(nodesL);
+        nei.clear();
+        for (; nodesIter(); ++nodesIter){
+                int i = nodesIter.val();
+                if (arcIsInUB(i,a))
+                        nei.push_back(i);
+        }
+}
+template <class ArcNode>
+void NodeArcSetsGraphViewT<ArcNode>::outNeighboursUB(int a, vector<int> &nei) const{
+        SetVarLubRanges nodesU(nodes);
+        Iter::Ranges::ToValues<SetVarLubRanges> nodesIter(nodesU);
+        nei.clear();
+        for (; nodesIter(); ++nodesIter){
+                int i = nodesIter.val();
+                if (arcIsInUB(a,i))
+                        nei.push_back(i);
+        }
+}
+template <class ArcNode>
+void NodeArcSetsGraphViewT<ArcNode>::outNeighboursLB(int a, vector<int> &nei) const{
+        SetVarGlbRanges nodesL(nodes);
+        Iter::Ranges::ToValues<SetVarGlbRanges> nodesIter(nodesL);
+        nei.clear();
+        for (; nodesIter(); ++nodesIter){
+                int i = nodesIter.val();
+                if (arcIsInUB(a,i))
+                        nei.push_back(i);
+        }
+}
+
+//FIXME O(N2) is really too much !!
+// use arc iterator
+template <class ArcNode>
+int NodeArcSetsGraphViewT<ArcNode>::inDegreeUB(int a ) const{
+        int d=0;
+        SetVarLubRanges nodesU(nodes);
+        Iter::Ranges::ToValues<SetVarLubRanges> nodesIter(nodesU);
+        for (; nodesIter(); ++nodesIter){
+                int i = nodesIter.val();
+                if (arcIsInUB(i,a)){ d++;}
+        }
+        return d;
+}
+
+
+//FIXME O(N2) is really too much !!
+// use arc iterator
+template <class ArcNode>
+int NodeArcSetsGraphViewT<ArcNode>::inDegreeLB(int a ) const{
+        int d=0;
+        SetVarGlbRanges nodesL(nodes);
+        Iter::Ranges::ToValues<SetVarGlbRanges> nodesIter(nodesL);
+        for (; nodesIter(); ++nodesIter){
+                int i = nodesIter.val();
+                if (arcIsInLB(i,a)){ d++;}
+        }
+        return d;
+}
+
+//FIXME O(N2) is really too much !!
+// use arc iterator
+template <class ArcNode>
+int NodeArcSetsGraphViewT<ArcNode>::outDegreeUB(int a ) const{
+        int d=0;
+        SetVarLubRanges nodesU(nodes);
+        Iter::Ranges::ToValues<SetVarLubRanges> nodesIter(nodesU);
+        for (; nodesIter(); ++nodesIter){
+                int i = nodesIter.val();
+                if (arcIsInUB(a,i)){ d++;}
+        }
+        return d;
+}
+//FIXME O(N2) is really too much !!
+// use arc iterator
+template <class ArcNode>
+int NodeArcSetsGraphViewT<ArcNode>::outDegreeLB(int a ) const{
+        int d=0;
+        SetVarGlbRanges nodesL(nodes);
+        Iter::Ranges::ToValues<SetVarGlbRanges> nodesIter(nodesL);
+        for (; nodesIter(); ++nodesIter){
+                int i = nodesIter.val();
+                if (arcIsInLB(a,i)){ d++;}
+        }
+        return d;
+}
+
+template <class ArcNode>
+bool NodeArcSetsGraphViewT<ArcNode>::assigned()const{
+        return nodes.assigned() && arcs.assigned();
+}
+template <class ArcNode>
+bool NodeArcSetsGraphViewT<ArcNode>::nodeAssigned()const{
+        return nodes.assigned();
+}
+template <class ArcNode>
+boost::tuple<vector<int>,vector<int>,vector<pair<int,int> >,vector<pair<int,int> > >
+NodeArcSetsGraphViewT<ArcNode>::get_domain() {
+        //Return values
+        vector<int> nL;
+        vector<int> nU;
+        vector<pair<int,int> > aL;
+        vector<pair<int,int> > aU;
+        SetVarLubRanges nodesU(nodes);
+        Iter::Ranges::ToValues<SetVarLubRanges > nodesUV(nodesU);
+        for (;nodesUV();++nodesUV){
+                nU.push_back(nodesUV.val());
+        }
+        SetVarGlbRanges nodesL(nodes);
+        Iter::Ranges::ToValues<SetVarGlbRanges > nodesLV(nodesL);
+        for (;nodesLV();++nodesLV){
+                nL.push_back(nodesLV.val());
+        }
+
+        SetVarLubRanges arcsU(arcs);
+        Iter::Ranges::ToValues<SetVarLubRanges > arcsUV(arcsU);
+        for (;arcsUV();++arcsUV){
+                aU.push_back(an->end_nodes(arcsUV.val()));
+        }
+        SetVarGlbRanges arcsL(arcs);
+        Iter::Ranges::ToValues<SetVarGlbRanges > arcsLV(arcsL);
+        for (;arcsLV();++arcsLV){
+                aL.push_back(an->end_nodes(arcsLV.val()));
+        }
+        return boost::make_tuple(nL,nU,aL,aU);
+}
+
+} }
+/**
+ * \brief Print graph variable view
+ * \relates Gecode::Graph::NodeArcSetsGraphView
+ */
+template <class ArcNode>
+std::ostream&
+operator<<(std::ostream& os, const Gecode::Graph::NodeArcSetsGraphViewT<ArcNode>& g){
+	
+	 os <<endl <<"########## Graph #########"<<endl;
+	    os <<"Nodes: "<< g.nodes<<endl;
+	      os <<"Arcs: ["<< endl;
+	        Gecode::Graph::NodeArcSetsGraphView::GlbArcIterator au=g.iter_arcs_LB();
+	      for (; au(); ++au){
+	            int i,j;
+	            boost::tie(i,j) = au.val();
+	               os << "("<<i<<","<<j<<"), " ;
+	     }
+	        os <<endl << "], ["<< endl;
+	         Gecode::Graph::NodeArcSetsGraphView::LubArcIterator al=g.iter_arcs_UB();
+	       for (; al(); ++al){
+	                int i,j;
+	               boost::tie(i,j) = al.val();
+	                os << "("<<i<<","<<j<<"), " ;
+	        }
+	        os <<endl << "]"<< endl;
+	        os <<"##########################"<<endl<<endl;
+	         return os;
+
+}
+

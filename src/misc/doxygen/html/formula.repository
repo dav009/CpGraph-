@@ -1,0 +1,18 @@
+\form#0:$ g_1 $
+\form#1:$ g_2 $
+\form#2:$ g_2$
+\form#3:$ g $
+\form#4:$N1$
+\form#5:$N2$
+\form#6:$W$
+\form#7:$Costs$
+\form#8:$G$
+\form#9:$g$
+\form#10:$start$
+\form#11:$end$
+\form#12:$w$
+\form#13:$st$
+\form#14:$en$
+\form#15:$edgecosts$
+\form#16:$a=(n1,n2)$
+\form#17:$ \forall (a,b)\in Arcs(g) : (a\in Nodes(g) \wedge b\in Nodes(g)) $

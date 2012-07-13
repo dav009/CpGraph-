@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg  version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="558" height="495" viewBox="0 0 558 495"
+	 overflow="visible" enable-background="new 0 0 558 495" xml:space="preserve">
+<rect fill="#FFFFFF" width="558" height="495"/>
+<polygon fill="none" stroke="#00A0C6" stroke-width="4" points="281.534,28.305 50.303,196.304 138.626,468.132 424.442,468.132
+	512.765,196.304 "/>
+<polyline fill="none" stroke="#00A0C6" stroke-width="4" points="211.812,367.399 394.348,234.78 168.721,234.78 351.257,367.399
+	"/>
+<polyline fill="none" stroke="#00A0C6" stroke-width="4" points="424.442,468.132 351.257,367.399 281.534,152.816 211.812,367.399
+	138.626,468.132 "/>
+<line fill="none" stroke="#00A0C6" stroke-width="4" x1="281.534" y1="28.305" x2="281.534" y2="152.816"/>
+<line fill="none" stroke="#00A0C6" stroke-width="4" x1="394.348" y1="234.78" x2="512.765" y2="196.304"/>
+<line fill="none" stroke="#00A0C6" stroke-width="4" x1="168.721" y1="234.78" x2="50.303" y2="196.304"/>
+<path fill="#FFFFFF" d="M464.942,479.832c0,5.964-4.835,10.8-10.8,10.8h-59.4c-5.964,0-10.8-4.836-10.8-10.8v-23.4
+	c0-5.964,4.836-10.8,10.8-10.8h59.4c5.965,0,10.8,4.836,10.8,10.8V479.832z"/>
+<path fill="#FFFFFF" d="M553.265,208.004c0,5.964-4.835,10.8-10.8,10.8h-59.4c-5.965,0-10.8-4.835-10.8-10.8v-23.4
+	c0-5.964,4.835-10.8,10.8-10.8h59.4c5.965,0,10.8,4.835,10.8,10.8V208.004z"/>
+<path fill="#FFFFFF" d="M433.848,246.48c0,5.964-4.836,10.8-10.8,10.8h-59.4c-5.964,0-10.8-4.835-10.8-10.8v-23.4
+	c0-5.964,4.836-10.8,10.8-10.8h59.4c5.964,0,10.8,4.835,10.8,10.8V246.48z"/>
+<path fill="#FFFFFF" d="M391.757,377.1c0,5.964-4.835,10.8-10.8,10.8h-59.4c-5.964,0-10.8-4.836-10.8-10.8v-23.4
+	c0-5.964,4.836-10.8,10.8-10.8h59.4c5.965,0,10.8,4.836,10.8,10.8V377.1z"/>
+<path fill="#FFFFFF" d="M252.312,377.1c0,5.964-4.835,10.8-10.8,10.8h-59.4c-5.964,0-10.8-4.836-10.8-10.8v-23.4
+	c0-5.964,4.835-10.8,10.8-10.8h59.4c5.964,0,10.8,4.836,10.8,10.8V377.1z"/>
+<path fill="#FFFFFF" d="M179.126,479.832c0,5.964-4.835,10.8-10.8,10.8h-59.4c-5.964,0-10.8-4.836-10.8-10.8v-23.4
+	c0-5.964,4.835-10.8,10.8-10.8h59.4c5.964,0,10.8,4.836,10.8,10.8V479.832z"/>
+<path fill="#FFFFFF" d="M90.803,208.004c0,5.964-4.835,10.8-10.8,10.8h-59.4c-5.964,0-10.8-4.835-10.8-10.8v-23.4
+	c0-5.964,4.835-10.8,10.8-10.8h59.4c5.964,0,10.8,4.835,10.8,10.8V208.004z"/>
+<path fill="#FFFFFF" d="M210.221,246.48c0,5.964-4.835,10.8-10.8,10.8h-59.4c-5.964,0-10.8-4.835-10.8-10.8v-23.4
+	c0-5.964,4.835-10.8,10.8-10.8h59.4c5.964,0,10.8,4.835,10.8,10.8V246.48z"/>
+<path fill="#FFFFFF" d="M322.034,164.517c0,5.964-4.836,10.8-10.8,10.8h-59.4c-5.964,0-10.8-4.835-10.8-10.8v-23.4
+	c0-5.964,4.835-10.8,10.8-10.8h59.4c5.964,0,10.8,4.835,10.8,10.8V164.517z"/>
+<path fill="#FFFFFF" d="M322.034,40.005c0,5.964-4.836,10.8-10.8,10.8h-59.4c-5.964,0-10.8-4.835-10.8-10.8v-23.4
+	c0-5.964,4.835-10.8,10.8-10.8h59.4c5.964,0,10.8,4.835,10.8,10.8V40.005z"/>
+<text transform="matrix(1 0 0 1 241.7549 37.3047)" font-family="Times" font-style="normal" font-size="36">{1,2}</text>
+<text transform="matrix(1 0 0 1 10.5239 205.3037)" font-family="Times" font-style="normal" font-size="36">{3,4}</text>
+<text transform="matrix(1 0 0 1 241.7549 161.8164)" font-family="Times" font-style="normal" font-size="36">{3,5}</text>
+<text transform="matrix(1 0 0 1 472.9854 205.3037)" font-family="Times" font-style="normal" font-size="36">{4,5}</text>
+<text transform="matrix(1 0 0 1 172.0322 376.3994)" font-family="Times" font-style="normal" font-size="36">{1,4}</text>
+<text transform="matrix(1 0 0 1 310.6475 372.9922)" font-family="Times" font-style="normal" font-size="36">{2,4}</text>
+<text transform="matrix(1 0 0 1 128.9419 243.7798)" font-family="Times" font-style="normal" font-size="36">{1,5}</text>
+<text transform="matrix(1 0 0 1 354.5684 243.7798)" font-family="Times" font-style="normal" font-size="36">{2,3}</text>
+<text transform="matrix(1 0 0 1 98.8467 477.1318)" font-family="Times" font-style="normal" font-size="36">{2,5}</text>
+<text transform="matrix(1 0 0 1 384.6631 477.1318)" font-family="Times" font-style="normal" font-size="36">{1,3}</text>
+</svg>

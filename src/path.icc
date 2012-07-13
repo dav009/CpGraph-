@@ -1,0 +1,69 @@
+
+/*
+ *  Main authors:
+ *     Gr�goire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Gr�goire Dooms (Universit� catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 10:57:21 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 271 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+
+#include "path/pathdegree.icc"
+namespace Gecode { namespace Graph {
+
+/** \brief Post a degree constraint on the graph view \f$g\f$.
+ *
+ * All nodes of \f$g\f$ have indegree of 1 (except start) and out degree of 1 (except end)
+ * \ingroup TaskModel
+ */
+template <class GView>
+    void pathdegree(Space *home, GView &g, int start, int end){
+        GECODE_ES_FAIL(home, PathDegreePropag<GView>::post(home, g, start, end));
+}
+
+
+
+/** \brief Post a simple path constraint on the graph view \f$g\f$, In g must exist a simple path from \f$start\f$ to \f$end\f$ with Weight \f$W\f$.
+ *
+ * The propagator uses cost filtering based on the upper bound of w and updates the lower bound of w.
+ * Post a constraint over Graph \f$g\f$, in \f$g\f$ must exist a path from Node \f$start\f$ to \f$end\f$ with cost \f$w\f$, the costs of the arcs are described by \f$edgecosts\f$
+ * \ingroup TaskModel
+ */
+template <class GView>
+void path(Space* home, GView &g, int start, int end, const map <pair<int,int>,int> &edgecosts, IntVar w) {
+	//std::cout<<"restricciones1"<<std::endl;
+        if (home->failed()) return;
+        GECODE_ME_FAIL(home, g._nodeIn(home, start));
+        GECODE_ME_FAIL(home, g._nodeIn(home, end));
+        pathdegree(home,g,start,end);
+        GECODE_ES_FAIL(home, PathCostPropag<GView>::post(home, g, start, end, w, edgecosts));
+}
+/** \brief Post a path constraint on the graph view \f$g\f$, In g must exist a simple path from \f$start\f$ to \f$end\f$
+ * In \f$g\f$ must exist a simple path from Node \f$start\f$ to Node \f$end\f$
+ * \ingroup TaskModel
+ */
+template <class GView>
+void path(Space* home, GView &g, int start, int end) {
+
+        if (home->failed()) return;
+        GECODE_ME_FAIL(home, g._nodeIn(home, start));
+        GECODE_ME_FAIL(home, g._nodeIn(home, end));
+	    pathdegree(home,g,start,end);
+        GECODE_ES_FAIL(home, PathPropag<GView>::post(home, g, start, end));
+
+}
+
+} }
+#include "path/path.icc"
+
+

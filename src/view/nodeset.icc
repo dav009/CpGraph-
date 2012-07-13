@@ -1,0 +1,60 @@
+
+/*
+ *  Main authors:
+ *     Grégoire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Grégoire Dooms (Université catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 10:57:21 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 271 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+
+namespace Gecode { namespace Graph {
+/// \brief Specialisation of NodeSetView for OutAdjSetsGraphView 
+template <>
+NodeSetView<OutAdjSetsGraphView>::NodeSetView(const OutAdjSetsGraphView &g):Set::SetView(g.nodes){ };
+/// \brief Specialisation of NodeSetView for OutAdjSetsGraphView 
+template <>
+NodeSetView<NodeArcSetsGraphView>::NodeSetView(const NodeArcSetsGraphView &g):Set::SetView(g.nodes){ };
+} }
+
+//using namespace Gecode::Graph;
+namespace Gecode { namespace Set {
+template <>
+/// \brief Range iterator over the upper bound of a NodeSetView for OutAdjSetsGraphView 
+struct LubRanges<Gecode::Graph::NodeSetView<Gecode::Graph::OutAdjSetsGraphView> >: public LubRanges<SetView>{
+    LubRanges(void){}
+    LubRanges(SetView& x):LubRanges<SetView>(x){}
+};
+/// \brief Range iterator over the lower bound of a NodeSetView for OutAdjSetsGraphView 
+template <>
+struct GlbRanges<Gecode::Graph::NodeSetView<Gecode::Graph::OutAdjSetsGraphView> >: public GlbRanges<SetView>{
+    GlbRanges(void){}
+    GlbRanges(SetView& x):GlbRanges<SetView>(x){}
+};
+/// \brief Range iterator over the upper bound of a NodeSetView for NodeArcSetsGraphView 
+template <>
+struct LubRanges<Gecode::Graph::NodeSetView<Gecode::Graph::NodeArcSetsGraphView> >: public LubRanges<SetView>{
+    LubRanges(void){}
+    LubRanges(SetView& x):LubRanges<SetView>(x){}
+};
+/// \brief Range iterator over the lower bound of a NodeSetView for NodeArcSetsGraphView 
+template <>
+struct GlbRanges<Gecode::Graph::NodeSetView<Gecode::Graph::NodeArcSetsGraphView> >: public GlbRanges<SetView>{
+    GlbRanges(void){}
+    GlbRanges(SetView& x):GlbRanges<SetView>(x){}
+};
+}
+}
+
+        
+

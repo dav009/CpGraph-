@@ -1,0 +1,1090 @@
+
+/*
+ *  Main authors:
+ *     Gr�goire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Gr�goire Dooms (Universit� catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 10:57:21 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 271 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *david
+ */
+
+#include "graph.hh"
+#include "stlutility.icc"
+#include "set/rel.hh"
+#include "set.hh"
+#include <list>
+#include <boost/utility.hpp>
+#undef TRACE
+//#define TRACE(A) A
+#define TRACE(A)
+//using namespace boost;
+//using namespace std;
+namespace Gecode { namespace Graph {
+
+
+
+
+/*
+ *
+ * BinaryGraphPropagator
+ *
+*/
+template <class GDV1, PropCond p1, class GDV2, PropCond p2>
+forceinline
+BinaryGraphPropagator<GDV1, p1, GDV2, p2>::BinaryGraphPropagator(Space* home,bool share, Propagator& p, GDV1 &y1, GDV2 &y2): Propagator(home,share,p){
+    g1.update(home,share,y1);
+    g2.update(home,share,y2);
+}
+
+/*
+ *
+ * BinaryGraphPropagator
+ *
+*/
+template <class GDV1, PropCond p1, class GDV2, PropCond p2>
+forceinline
+BinaryGraphPropagator<GDV1, p1, GDV2, p2>::BinaryGraphPropagator(Space* home, bool share, BinaryGraphPropagator<GDV1, p1, GDV2, p2> &p):
+Propagator(home,share,p) {
+        g1.update(home, share, p.g1);
+        g2.update(home, share, p.g2);
+}
+
+/*
+ *
+ * BinaryGraphPropagator
+ *
+*/
+template <class GDV1, PropCond p1, class GDV2, PropCond p2>
+forceinline
+BinaryGraphPropagator<GDV1, p1, GDV2, p2>::BinaryGraphPropagator(Space* home, GDV1 &g1, GDV2 &g2): Propagator(home), g1(g1), g2(g2) {
+        g1.subscribe(home, this, p1);
+        g2.subscribe(home, this, p2);
+
+}
+
+/*
+ *
+ * BinaryGraphPropagator
+ *
+*/
+template <class GDV1, PropCond p1, class GDV2, PropCond p2>
+PropCost    BinaryGraphPropagator<GDV1, p1, GDV2, p2>::cost(ModEventDelta med) const {
+        return PC_QUADRATIC_LO;
+}
+
+/*
+ *
+ * BinaryGraphPropagator
+ *
+*/
+//Updated in order to work with Gecode 2.1.1
+ template <class GDV1, PropCond p1, class GDV2, PropCond p2>
+ forceinline
+ size_t  BinaryGraphPropagator<GDV1, p1, GDV2, p2>::dispose(Space* home) {
+	 		g1.cancel(home,this,p1);
+	 		g2.cancel(home,this,p2);
+	 		(void) Propagator::dispose(home);
+	 		return sizeof(*this);
+}
+
+/*
+ *
+ * BinaryGraphPropagator
+ *
+*/
+//Updated in order to work with Gecode 2.1.1
+ template <class GDV1, PropCond p1, class GDV2, PropCond p2>
+ Reflection::ActorSpec
+ BinaryGraphPropagator<GDV1, p1, GDV2, p2>::spec(const Space* home, Reflection::VarMap& m,const Support::Symbol& name) const {
+	 Reflection::ActorSpec s(name);
+	 return s << g1.spec(home, m)<< g1.spec(home, m);
+ }
+
+
+ /*
+  *
+  *  Undirected Graph Propagator
+  *
+  *
+  */
+
+ template <class GDV1, class GDV2>
+ void undirected (Space * home, GDV1 &g1, GDV2 &g2){
+         if (home->failed()) return;
+         NodeSetView<GDV1> v1(g1);
+         NodeSetView<GDV2> v2(g2);
+         GECODE_ES_FAIL(home,(Set::Rel::Eq<NodeSetView<GDV1>, NodeSetView<GDV2> >::post(home, v1,v2)));
+         GECODE_ES_FAIL(home, (UndirectedPropag<GDV1,GDV2>::post(home, g1, g2)));
+ }
+
+ template <class GDV1, class GDV2>
+ ExecStatus UndirectedPropag<GDV1, GDV2>::post(Space* home, GDV1 &g1, GDV2 &g2) {
+         (void) new (home) UndirectedPropag(home, g1, g2);
+         return ES_OK;
+ }
+
+
+ template <class GDV1, class GDV2>
+         forceinline
+ UndirectedPropag<GDV1, GDV2>::UndirectedPropag(Space* home, bool share, UndirectedPropag &p)
+         : BinaryGraphPropagator<GDV1, Gecode::Graph::PC_GRAPH_ANY, GDV2, Gecode::Graph::PC_GRAPH_ANY>(home,share, p) {
+         }
+
+ template <class GDV1, class GDV2>
+         forceinline
+ UndirectedPropag<GDV1, GDV2>::UndirectedPropag(Space* home, GDV1 &g1, GDV2 &g2)
+         : BinaryGraphPropagator<GDV1, Gecode::Graph::PC_GRAPH_ANY, GDV2, Gecode::Graph::PC_GRAPH_ANY>(home,g1,g2) {
+         }
+
+ template <class GDV1, class GDV2>
+ Actor*      UndirectedPropag<GDV1, GDV2>::copy(Space* home,bool share) {
+         return new (home) UndirectedPropag(home,share,*this);
+ }
+
+ /** \brief Visitor used by the undirected propagator with scanTwoGraphsArcs and scanGraphArcs
+  * 
+  *
+  *
+*/
+
+ template <class GDV1, class GDV2>
+ struct UndirectedVisit{
+ 
+ 	bool assigned; ///< tells if the variables are assigned
+ 	vector<vector<int> > isInG1; ///< For and arc (a,b) of g1, isInG1[a][b] is 0 if (a,b) belongs to None, is 1 if (a,b) belongs to Glb, is 2 if (a,b) belongs to Lub
+ 	GDV1 *g1;
+ 	GDV2 *g2;
+ 	list<pair<int,int> > incG1;///< stores arcs which must be included in G1
+ 	list<pair<int,int> > remG1;///< stores arcs which must be removed from G1
+ 	list<pair<int,int> > incG2;///< stores arcs which must be included in G2
+ 	list<pair<int,int> > remG2;///< stores arcs which must be removed from G2
+ 	UndirectedVisit(GDV1 g1_, GDV2 g2_):assigned(true),g1(&g1_),g2(&g2_)
+ 	{
+	
+ 		//TODO : convert isInG1 to a hash_map
+   
+         int maxNumNodos=g1->maxNodeId();
+          if(maxNumNodos<0)
+             maxNumNodos=0;
+ 		vector<int> tmp(maxNumNodos+1, 0);
+ 		vector<vector<int > > tmp2(maxNumNodos+1, tmp);
+
+ 		isInG1=tmp2;
+ 		scanGraphArcs(*g1, *this);
+ 	}
+	void visitUnknown(int t, int h) {
+		
+		isInG1[t][h]=2; 
+
+	};
+ 	void visitLower(int t,int h) {
+
+		isInG1[t][h]=1; 
+
+ 	};
+ 	/// called for an arc absent from both domains
+ 	void NoneNone(int t,int h)
+ 	{
+ 		TRACE(cout << t << " " << h << " NoneNone" << endl);
+ 		//NoneNoneNoneNone
+ 		if (isInG1[h][t]==0){};//do nothing
+ 		//NoneGlbNoneNone
+ 		if (isInG1[h][t]==1) {fail();};
+ 		//NoneLubNoneNone
+ 		if (isInG1[h][t]==2) {/*do nothing, (h,t) will be treated later*/};
+ 	}
+ 	/// called for an arc absent from g1 but in lub(g2)
+ 	void NoneLub(int t,int h)
+ 	{
+ 		TRACE(cout << t << " " << h << " NoneLub" << endl);
+ 		//NoneNoneLubLub
+ 		if (isInG1[h][t]==0){remG2.push_back(make_pair(t,h));/*(h,t) will be pruned later*/};
+ 		//NoneGlbLubLub
+ 		if (isInG1[h][t]==1) {incG2.push_back(make_pair(t,h));/*(h,t) will be treated later*/};
+ 		//NoneLubLubLub
+ 		if (isInG1[h][t]==2) {assigned=false;/*do nothing*/};
+ 	}
+ 	/// called for an arc absent from g1 but in glb(g2)
+ 	void NoneGlb(int t,int h)
+ 	{
+ 		TRACE(cout << t << " " << h << " NoneGlb" << endl);
+ 		//NoneNoneGlbGlb
+ 		if (isInG1[h][t]==0){fail();};
+ 		//NoneGlbGlbGlb
+ 		if (isInG1[h][t]==1) {/*do nothing*/};
+ 		//NoneLubGlbGlb
+ 		if (isInG1[h][t]==2) {/*do nothing, (h,t) will be treated later*/};
+ 	}
+ 	/// called for an arc in lub(g1) but absent from g2
+ 	void LubNone(int t,int h)
+ 	{
+ 		TRACE(cout << t << " " << h << " NoneGlb" << endl);
+ 		//LubNoneNoneNone
+ 		if (isInG1[h][t]==0){remG1.push_back(make_pair(t,h));};
+ 		//LubGlbNoneNone
+ 		if (isInG1[h][t]==1) {fail();};
+ 		//LubLubNoneNone
+ 		if (isInG1[h][t]==2) {remG1.push_back(make_pair(t,h)); /*(h,t) will be removed later*/};
+ 	}
+ 	/// called for an arc in both lubs
+ 	void LubLub(int t,int h)
+ 	{
+ 		TRACE(cout << t << " " << h << " LubLub" << endl);
+ 		//LubNoneLubLub
+ 		if (isInG1[h][t]==0){assigned=false;};
+ 		//LubGlbLubLub
+ 		if (isInG1[h][t]==1) {incG2.push_back(make_pair(t,h)); /*(h,t) will be included later*/};
+ 		//LubLubLubLub
+ 		if (isInG1[h][t]==2) {assigned=false;};
+ 	}
+ 	/// called for an arc in lub(g1) and glb(g2)
+ 	void LubGlb(int t,int h)
+ 	{
+ 		TRACE(cout << t << " " << h << " LubGlb" << endl);
+ 		//LubNoneGlbGlb
+ 		if (isInG1[h][t]==0){incG1.push_back(make_pair(t,h));};
+ 		//LubGlbGlbGlb
+ 		if (isInG1[h][t]==1) {assigned=false;};
+ 		//LubLubGlbGlb
+ 		if (isInG1[h][t]==2) {assigned=false;};
+ 	}
+ 	/// called for an arc in glb(g1) and not in g2
+ 	void GlbNone(int t,int h)
+ 	{
+ 		TRACE(cout << t << " " << h << " GlbNone" << endl);
+ 		//GlbNoneNoneNone
+ 		if (isInG1[h][t]==0){fail();};
+ 		//GlbGlbNoneNone
+ 		if (isInG1[h][t]==1) {fail();};
+ 		//GlbLubNoneNone
+ 		if (isInG1[h][t]==2) {fail();};
+ 	}
+ 	/// called for an arc in glb(g1) and in lub(g2)
+ 	void GlbLub(int t,int h)
+ 	{
+ 		TRACE(cout << t << " " << h << " GlbLub" << endl);
+ 		//GlbNoneLubLub
+ 		if (isInG1[h][t]==0){incG2.push_back(make_pair(t,h));/*(h,t) will be treated later*/};
+ 		//GlbGlbLubLub
+ 		if (isInG1[h][t]==1) {incG2.push_back(make_pair(t,h));};
+ 		//GlbLubLubLub
+ 		if (isInG1[h][t]==2) {incG2.push_back(make_pair(t,h));};
+ 	}
+ 	/// called for an arc in both glb
+ 	void GlbGlb(int t,int h)
+ 	{
+ 		TRACE(cout << t << " " << h << " GlbGlb" << endl);
+ 		//GlbNoneGlbGlb
+ 		if (isInG1[h][t]==0){};
+ 		//GlbGlbGlbGlb
+ 		if (isInG1[h][t]==1){};
+ 		//GlbLubGlbGlb
+ 		if (isInG1[h][t]==2) {assigned=false;};
+ 	}
+
+ void fail(){ throw Failure(); }
+     
+ };
+
+ /// \brief performs the propagation
+ template <class GDV1, class GDV2>
+ ExecStatus UndirectedPropag<GDV1, GDV2>::propagate(Space* home,ModEventDelta med) {
+         /* Scan the arcs in both graphs and tells wether it is in LB/UB/None for each graph.
+ 	 * A first scanning is made throught g1 to store the position in LB/UB/None of each arc.
+ 	 * A secong scanning on both graphs is made to prune.
+ 	 * For precise pruning rules see UndirectedVisit.
+         */
+       
+         UndirectedVisit<GDV1,GDV2> visit(g1,g2);
+
+
+          try{
+                 scanTwoGraphsArcs(g1,g2,visit);
+            } catch (Failure e) {
+                    return ES_FAILED;
+            }
+
+     
+
+         typedef StlToGecodeValIterator<list<pair<int,int> >::iterator> ItVal;
+         ItVal remG1(visit.remG1.begin(),visit.remG1.end());
+         GECODE_ME_CHECK(g1._arcsOut(home,remG1));
+         ItVal remG2(visit.remG2.begin(),visit.remG2.end());
+         GECODE_ME_CHECK(g2._arcsOut(home,remG2));
+         ItVal incG1(visit.incG1.begin(),visit.incG1.end());
+         GECODE_ME_CHECK(g1._arcsIn(home,incG1));
+         ItVal incG2(visit.incG2.begin(),visit.incG2.end());
+         GECODE_ME_CHECK(g2._arcsIn(home,incG2));
+         if (visit.assigned && g1.nodeAssigned() && g2.nodeAssigned()){
+                TRACE(cout << "assigned" <<endl);
+                 return ES_SUBSUMED((Propagator*)this,dispose(home));
+         }
+
+         TRACE(cout << "end undirected propagate END" << endl;)
+         return ES_OK; //FIX
+ }
+
+
+
+
+
+/*
+ *
+ *  Complement Graph Propagator
+ *
+ *
+ */
+
+
+
+template <class GDV1, class GDV2>
+void complement (Space * home, GDV1 &g1, GDV2 &g2){
+        if (home->failed()) return;
+        GECODE_ES_FAIL(home,(Set::Rel::Eq<NodeSetView<GDV1>, NodeSetView<GDV2> >::post(home, g1,g2)));
+        GECODE_ES_FAIL(home, (ComplementPropag<GDV1,GDV2>::post(home, g1, g2)));
+
+}
+
+
+
+template <class GDV1, class GDV2>
+ExecStatus ComplementPropag<GDV1, GDV2>::post(Space* home, GDV1 &g1, GDV2 &g2) {
+        (void) new (home) ComplementPropag(home, g1, g2);
+        return ES_OK;
+}
+
+
+
+template <class GDV1, class GDV2>
+        forceinline
+ComplementPropag<GDV1, GDV2>::ComplementPropag(Space* home, bool share, ComplementPropag &p)
+        : BinaryGraphPropagator<GDV1, Gecode::PC_GEN_NONE, GDV2, Gecode::PC_GEN_NONE>(home,share, p),co1(home) {
+
+	     co1.update(home,share,p.co1);
+             //initial propagator state. -1
+             indicador=-1;
+             cuenta=p.cuenta;
+             remArcsG1=p.remArcsG1;
+	     remArcsG2=p.remArcsG2;
+	     addArcsG1=p.addArcsG1;
+	     addArcsG2=p.addArcsG2;
+             addnodes=p.addnodes;
+	     remnodes=p.remnodes;
+	     activo=p.activo;
+
+        }
+
+template <class GDV1, class GDV2>
+        forceinline
+ComplementPropag<GDV1, GDV2>::ComplementPropag(Space* home, GDV1 &g1, GDV2 &g2)
+        : BinaryGraphPropagator<GDV1, Gecode::PC_GEN_NONE, GDV2, Gecode::PC_GEN_NONE>(home,g1,g2),co1(home),remArcsG1(),remArcsG2(),addArcsG1(),addArcsG2(),addnodes(),remnodes() {
+              
+                cuenta=0;
+                indicador=0;
+                //Each view Subscribes the Advisors to the propagator, and the council.
+                g1.subscribe( home,this,&co1,1);
+ 		g2.subscribe( home,this,&co1,2);
+		activo=0;
+        }
+
+
+template <class GDV1, class GDV2>
+ 	Gecode::ExecStatus
+ 	ComplementPropag<GDV1, GDV2>::advise(Space* home, Advisor* _a, const Delta* d){
+		
+		const Gecode::Set::SetDelta* s_=static_cast<const Gecode::Set::SetDelta*>(d);
+                //if the change is caused by the advisors propagator, then there is no need to queue. So ES_FIX is returned.
+		if(activo==1)
+			return ES_FIX;
+
+               
+                //the first propagation has to be complete(with scanning)
+               //indicador=0 stands for : complete propagation
+		if (cuenta==0)
+		{
+			indicador=0;
+			return ES_NOFIX;
+		}
+
+		
+
+		nameAdvisor2* dav=static_cast<nameAdvisor2*>(_a);
+	
+		//if an arc has changed.(name==2)
+		if(dav->nombre==2)
+		{
+			//if an arc was added to G1 then remove that arc from G2
+			if(s_->glbAny()==0 && dav->graph_id==1)
+			{
+                                 //if the change is simple.(just one arc was added)
+				 if(s_->glbMin()==s_->glbMax())
+				 {
+					 //get the added arc
+					 std::pair<int,int>  arista=g1.getArc(*dav,s_);
+	 				 nodoFuente=arista.first;
+	 				 nodoFinal=arista.second;
+					//put it in the vector of arcs which must be removed.
+					remArcsG2.push_back(std::pair< int, int>(nodoFuente,nodoFinal));
+					return ES_NOFIX;
+				 }
+				 else
+				 {
+                                         //if the change is not simple, then perform complete propagation(propagation with scanning).
+					 indicador=0; 
+					 return ES_NOFIX;
+				 }
+			}
+
+			//an arc was added to G2, then remove that arc from G1
+			if(s_->glbAny()==0 && dav->graph_id==2)
+			{
+                                 //if the change is simple(just one arc was added)
+				 if(s_->glbMin()==s_->glbMax())
+				 {
+					
+					 //get the added arc
+					 std::pair<int,int>  arista=g2.getArc(*dav,s_);
+	 				 nodoFuente=arista.first;
+	 				 nodoFinal=arista.second;
+					 //put in the vector of arcs which must be removed
+					 remArcsG1.push_back(std::pair< int, int>(nodoFuente,nodoFinal));
+				         return ES_NOFIX;
+				 }
+				 else
+				 {
+                                         //if the change is not simple, then perform complete propagation(propagation with scanning)
+					 indicador=0;
+					 return ES_NOFIX;
+				 }
+			
+			}
+
+			//an arc was removed from G2,then that arc has to be added to G1
+			if(s_->lubAny()==0 && dav->graph_id==2)
+			{
+				//if the change is simple(just one arc was removed)
+				 if(s_->lubMin()==s_->lubMax())
+				 {
+ 					 //get the removed arc
+					 std::pair<int,int>  arista=g2.getArc(*dav,s_);
+ 				         nodoFuente=arista.first;
+	 				 nodoFinal=arista.second;
+                                        //if the nodes are in the lowerbound
+					if(g2.nodeIsInLB(nodoFuente) && g2.nodeIsInLB(nodoFinal))
+					{
+						///if the arc is not in the upperBound of G1 then Fail the space
+						if(!g1.arcIsInUB(nodoFuente,nodoFinal))
+							return ES_FAILED;	
+					         //add the arc to the vector of arcs which have to be added
+				 	        addArcsG1.push_back(std::pair< int, int>(nodoFuente,nodoFinal));
+					
+	 				        return ES_NOFIX;
+					}
+					else
+                                        {     
+						indicador=0;
+					        return ES_NOFIX;
+					}
+			          }
+				 else
+				 {      //incase the change is not simple, then perfom complete propagation(propagation with scanning)
+					indicador=0;
+					 return ES_NOFIX;
+				 }
+				 
+			}
+
+		       //an Arc is removed from G1, then that arc has to be added to G2
+			if(s_->lubAny()==0 && dav->graph_id==1)
+			{
+		                 //if the change is simple(just one arc was removed)
+				 if(s_->lubMin()==s_->lubMax())
+				 {       
+                                         ///get the removed arc
+					 std::pair<int,int>  arista=g1.getArc(*dav,s_);
+	 				 nodoFuente=arista.first;
+	 				 nodoFinal=arista.second;
+					if(g2.nodeIsInLB(nodoFuente) && g2.nodeIsInLB(nodoFinal))
+					{
+                                               //if the arc in not in the Upperbound of g2,then fail the space
+					       if(!g2.arcIsInUB(nodoFuente,nodoFinal))
+						    return ES_FAILED;	
+                                              //add the arc to the vector of arcs which have to be added
+				              addArcsG2.push_back(std::pair< int, int>(nodoFuente,nodoFinal));
+					
+	 				     return ES_NOFIX;
+				   	}
+					else
+					{  
+					     indicador=0;
+					     return ES_NOFIX;
+				        }
+				 }
+				 else
+				 {    //incase the change is not simple, then perfom complete propagation(propagation with scanning)
+					indicador=0;
+					 return ES_NOFIX;
+				 }
+			}
+
+	}
+        //if a node changed. then, dont queue the propagator.
+	if(dav->nombre==1)
+	{	
+                 indicador=0;
+		 return ES_FIX;	
+	}
+        indicador=0;
+       return ES_NOFIX;
+   }
+
+template <class GDV1, class GDV2>
+Actor*      ComplementPropag<GDV1, GDV2>::copy(Space* home,bool share) {
+        return new (home) ComplementPropag(home,share,*this);
+}
+
+
+
+
+/** \brief Visitor used by the complement propagator with scanTwoGraphsCompleteNodeArcs
+*
+*	It is used with scanTwoGraphsCompleteNodeArcs, The mentioned function calls its
+*      methods telling whether an arc which belong to the complete graph is either in:
+*       
+*      -Glb of Both Graphs: In such case the visitor will tell the propagator to fail, since it is impossible to satisfy the restriction, since one arc is either in \f$ g_1 \f$  or \f$ g_2 \f$ 
+*      -LUB of Both Graphs
+*	-Glb of \f$ g_1 \f$  and Not In \f$ g_2\f$ 
+*	-Glb of \f$ g_1 \f$  and Lub of \f$ g_2 \f$ 
+*
+*/
+struct ComplVisit{
+      
+        bool assigned; ///< tells if the variables are assigned
+        list<pair<int,int> > incG1;///< stores arcs which must be included in G1
+        list<pair<int,int> > remG1;///< stores arcs which must be removed from G1
+        list<pair<int,int> > incG2;///< stores arcs which must be included in G2
+        list<pair<int,int> > remG2;///< stores arcs which must be removed from G2
+        ComplVisit():assigned(true){}
+
+        /// called for an arc absent from both domains
+        void NoneNone(int t,int h){ fail();                      TRACE(cout << t << " " << h << " NoneNone" << endl); }
+        /// called for an arc absent from g1 but in lub(g2)
+        void NoneLub(int t,int h) {incG2.push_back(make_pair(t,h));  TRACE(cout << t << " " << h << " NoneLub " << endl); }
+        /// called for an arc absent from g1 but in glb(g2)
+        void NoneGlb(int t,int h) {                                  TRACE(cout << t << " " << h << " NoneGlb " << endl); }
+        /// called for an arc in lub(g1) but absent from g2
+        void LubNone(int t,int h) {incG1.push_back(make_pair(t,h));  TRACE(cout << t << " " << h << " LubNone " << endl); }
+        /// called for an arc in both lubs
+        void LubLub(int t,int h)  {assigned=false;                   TRACE(cout << t << " " << h << " LubLub  " << endl); }
+        /// called for an arc in lub(g1) and glb(g2)
+        void LubGlb(int t,int h)  {remG1.push_back(make_pair(t,h));  TRACE(cout << t << " " << h << " LubGlb  " << endl); }
+        /// called for an arc in glb(g1) and not in g2
+        void GlbNone(int t,int h) {                                  TRACE(cout << t << " " << h << " GlbNone " << endl); }
+        /// called for an arc in glb(g1) and in lub(g2)
+        void GlbLub(int t,int h)  {remG2.push_back(make_pair(t,h));  TRACE(cout << t << " " << h << " GlbLub  " << endl); }
+        /// called for an arc in both glb
+        void GlbGlb(int t,int h)  {fail();                      TRACE(cout << t << " " << h << " GlbGlb  " << endl); }
+	/// called when the Visitor detects Failure. Throws an Exception
+	void fail(){ throw Failure(); }
+};
+
+
+template <class GDV1, class GDV2>
+ size_t
+    ComplementPropag<GDV1, GDV2>::dispose(Space* home) {
+     co1.dispose(home);
+     (void) BinaryGraphPropagator<GDV1, Gecode::PC_GEN_NONE,GDV2, Gecode::PC_GEN_NONE>::dispose(home);
+     return sizeof(*this);
+   }
+
+
+//using namespace Gecode::Set;
+/// \brief performs the propagation
+template <class GDV1, class GDV2>
+ExecStatus ComplementPropag<GDV1, GDV2>::propagate(Space *home, ModEventDelta med) {
+        
+         //the flag is set, so that the tells made by this propagator dont trigger the advisors subscribed to the same propagator
+        activo=1;
+        //the propagator is propagating so we count it.
+	cuenta++;
+        //remove and add all the arcs in the vectors.
+	  for (int i=0;i<addArcsG1.size();i++)	
+		{
+			std::pair< int, int>arc=addArcsG1[i];
+			GECODE_ME_CHECK(g1._arcIn(home,arc.first,arc.second));
+		}
+
+	for (int i=0;i<addArcsG2.size();i++)	
+	{
+			std::pair< int, int>arc=addArcsG2[i];
+			GECODE_ME_CHECK(g2._arcIn(home,arc.first,arc.second));
+	}
+
+	for (int i=0;i<remArcsG1.size();i++)	
+	{
+			std::pair< int, int>arc=remArcsG1[i];
+			GECODE_ME_CHECK(g1._arcOut(home,arc.first,arc.second));
+	}
+
+	for (int i=0;i<remArcsG2.size();i++)	
+	{
+			std::pair< int, int>arc=remArcsG2[i];
+			GECODE_ME_CHECK(g2._arcOut(home,arc.first,arc.second));
+	}
+
+
+
+       //clean the vectors
+	addArcsG1.clear();
+	remArcsG1.clear();
+	addArcsG2.clear();
+	remArcsG2.clear();
+        //if no complete propagation is needed 
+	if(indicador!=0)
+	{
+              // dispose if the graphs are assigned
+	       if (  (g1.assigned() && g2.assigned())){
+                            TRACE(cout << "assigned" <<endl);
+                            return ES_SUBSUMED((Propagator*)this,dispose(home));
+                    }		
+                //  release the flag
+		activo=0;
+		return ES_NOFIX;
+	}
+
+// complete propagation
+/* Scan  the arcs  in the complete graph build over nodes in the glb of both nodes(g1)=nodes(g2)
+           if an arc is in one of the lower bounds, remove from others upperbound
+           if it is not in one of the upperbounds add it to others lower bound 
+
+           */
+	
+	    
+        ComplVisit visit;
+        //TRACE(cout << static_cast<GDV1>(g1) << endl); // no longer compiles since namespace cleanup
+        //TRACE(cout << g2 << endl);  // no longer compiles since namespace cleanup
+        typename GDV1::GlbNodeRangesIterator nR1 = g1.iter_nodes_ranges_LB();
+        typename GDV1::GlbNodeRangesIterator nR2 = g2.iter_nodes_ranges_LB();
+        typedef Iter::Ranges::Union<typename GDV1::GlbNodeRangesIterator,typename GDV1::GlbNodeRangesIterator> NR;
+        typedef Iter::Ranges::ToValues<NR> NVals;
+        NR ranges(nR1,nR2);
+        NVals values(ranges);
+
+	  try{
+          	  scanTwoGraphsCompleteNodeArcs<GDV1,GDV2,NVals,ComplVisit>(g1,g2,values,visit);
+            } catch (Failure e) {
+                    return ES_FAILED;
+            }
+        
+
+
+
+
+        typedef StlToGecodeValIterator<list<pair<int,int> >::iterator> ItVal;
+        ItVal remG1(visit.remG1.begin(),visit.remG1.end());
+        TRACE(cout << visit.remG1 << endl);
+        GECODE_ME_CHECK(g1._arcsOut(home,remG1));
+        ItVal remG2(visit.remG2.begin(),visit.remG2.end());
+        TRACE(cout << visit.remG2 << endl);
+        GECODE_ME_CHECK(g2._arcsOut(home,remG2));
+        ItVal incG1(visit.incG1.begin(),visit.incG1.end());
+        TRACE(cout << visit.incG1 << endl);
+        GECODE_ME_CHECK(g1._arcsIn(home,incG1));
+        TRACE(cout << visit.incG2 << endl);
+        ItVal incG2(visit.incG2.begin(),visit.incG2.end());
+        GECODE_ME_CHECK(g2._arcsIn(home,incG2));
+       	indicador=-1;
+	activo=0;
+        if (visit.assigned  &&  (g1.nodeAssigned() && g2.nodeAssigned())){
+               TRACE(cout << "assigned" <<endl);
+         
+                 return ES_SUBSUMED((Propagator*)this,dispose(home));
+        }
+     
+        return ES_FIX;
+        
+
+}
+
+
+
+/*
+ * Subgraph propagator
+ *
+ */
+
+template <class GDV1, class GDV2>
+void subgraph (Space * home, GDV1 &g1, GDV2 &g2){
+        if (home->failed()) return;
+        /*NodeSetView<GDV1> v1(g1);
+        NodeSetView<GDV2> v2(g2);
+        GECODE_ES_FAIL(home,(Set::Rel::SubSet<NodeSetView<GDV1>, NodeSetView<GDV2> >::post(home, v1,v2)));*/
+        GECODE_ES_FAIL(home, (SubgraphPropag<GDV1,GDV2>::post(home, g1, g2)));
+}
+
+template <class GDV1, class GDV2>
+ExecStatus SubgraphPropag<GDV1, GDV2>::post(Space* home, GDV1 &g1, GDV2 &g2) {
+        (void) new (home) SubgraphPropag(home, g1, g2);
+        return ES_OK;
+}
+
+
+template <class GDV1, class GDV2>
+        forceinline
+SubgraphPropag<GDV1, GDV2>::SubgraphPropag(Space* home, bool share, SubgraphPropag &p)
+        : BinaryGraphPropagator<GDV1, Gecode::PC_GEN_NONE, GDV2, Gecode::PC_GEN_NONE>(home,share, p),co1(home) {
+        co1.update(home,share,p.co1);
+                 indicador=-1;
+                 cuenta=p.cuenta;
+		 remArcs=p.remArcs;
+		 addArcs=p.addArcs;
+	         addnodes=p.addnodes;
+	         remnodes=p.remnodes;
+		 activo=p.activo;
+        }
+
+template <class GDV1, class GDV2>
+        forceinline
+SubgraphPropag<GDV1, GDV2>::SubgraphPropag(Space* home, GDV1 &g1, GDV2 &g2)
+        : BinaryGraphPropagator<GDV1, Gecode::PC_GEN_NONE, GDV2, Gecode::PC_GEN_NONE>(home,g1,g2),co1(home),remArcs(),addArcs(),addnodes(),remnodes() {
+              
+                cuenta=0;
+                indicador=0;
+                //views are subscribed to advisors and councils.
+                g1.subscribe( home,this,&co1,1);
+ 		g2.subscribe( home,this,&co1,2);
+		activo=0;
+        }
+
+template <class GDV1, class GDV2>
+ 	Gecode::ExecStatus
+ 	SubgraphPropag<GDV1, GDV2>::advise(Space* home, Advisor* _a, const Delta* d){
+
+	
+	const Gecode::Set::SetDelta* s_=static_cast<const Gecode::Set::SetDelta*>(d);
+         //the flag is set, so that the tells made by this propagator dont trigger the advisors subscribed to the same propagator
+        if(activo==1)
+	   return ES_FIX;
+
+        //the first propagation has to be complete(with scanning)
+       //indicador=0 stands for : complete propagation
+	if (cuenta==0){
+	        indicador=0;
+		return ES_NOFIX;
+	}
+         /*if the change is not simple then complete propagation(propagation with scanning) is needed*/
+    	if(s_->glbAny()==0 && s_->lubAny()==0)
+	{
+	        indicador=0;
+		return ES_NOFIX;
+	}
+
+	
+	nameAdvisor2* dav=static_cast<nameAdvisor2*>(_a);
+	
+	//an arc has changed
+	if(dav->nombre==2)
+	{
+			//an arc was added to g1, then add that arc to g2
+			if(s_->glbAny()==0 && dav->graph_id==1)
+			{
+                                 //if the change is simple(just one arc was added)
+				 if(s_->glbMin()==s_->glbMax())
+				 {
+					
+					 std::pair<int,int>  arista=g1.getArc(*dav,s_);
+	 				 nodoFuente=arista.first;
+	 				 nodoFinal=arista.second;
+					 addArcs.push_back(std::pair< int, int>(nodoFuente,nodoFinal));	 
+					return ES_NOFIX;
+				 }
+				 else
+				 {   //if the change wasnt simple then complete propagation is needed.
+ 					  indicador=0;
+					 return ES_NOFIX;
+				 }
+			}
+
+			//an arc was added to g2, then no propagation is needed
+			if(s_->glbAny()==0 && dav->graph_id==2)
+			{
+					 if(s_->glbMin()==s_->glbMax())
+						return ES_FIX;
+			}
+
+			//an arc was removed from g2, then remove that arc from g1
+			if(s_->lubAny()==0 && dav->graph_id==2)
+			{
+                                 //if the change is simple(just one arc was removed)
+				 if(s_->lubMin()==s_->lubMax())
+				 {
+					
+					 std::pair<int,int>  arista=g2.getArc(*dav,s_);
+	 				 nodoFuente=arista.first;
+	 				 nodoFinal=arista.second;
+					 remArcs.push_back(std::pair< int, int>(nodoFuente,nodoFinal));;
+	 				 return ES_NOFIX;
+				 }
+				 else
+				 {//if the change wasnt simple then complete propagation is needed.
+					indicador=0;
+					 return ES_NOFIX;
+				 }
+				 
+			}
+
+		       //an arc was removed from g1, then no propagation is needed
+			if(s_->lubAny()==0 && dav->graph_id==1)
+			{
+				if(s_->lubMin()==s_->lubMax())
+					return ES_FIX;
+			
+			}
+
+	}
+        //if a node changed
+	if(dav->nombre==1)
+	{
+			// a node was added to g1, that node has to be added to g2
+			if(s_->glbAny()==0 && dav->graph_id==1)
+			{
+				//if the change is simple(just one node was added)
+				 if(s_->glbMin()==s_->glbMax())
+				 {
+					 nodo=s_->glbMin();
+					 addnodes.push_back(nodo);
+	 				 return ES_NOFIX;
+				 }
+				 else
+				 {//if the change wasnt simple then complete propagation is needed.
+					indicador=0;
+					 return ES_NOFIX;
+				 }
+			}
+
+			//a node was added to g2, then no propagation is needed.
+			if(s_->glbAny()==0 && dav->graph_id==2)
+			{
+				 if(s_->glbMin()==s_->glbMax())
+						return ES_FIX;
+				
+			}
+
+			//a node was removed from g2, then that node has to be removed from g1
+			if(s_->lubAny()==0 && dav->graph_id==2)
+			{
+				 if(s_->lubMin()==s_->lubMax())
+				 {
+					nodo=s_->lubMin();	
+					remnodes.push_back(nodo);
+		 	               return ES_NOFIX;
+				 }
+				 else
+				 {//if the change wasnt simple then complete propagation is needed.
+				    indicador=0;
+				    return ES_NOFIX;
+				 }
+				 
+			}
+			//a node was removed from g1, then no propagation is needed
+			if(s_->lubAny()==0 && dav->graph_id==1)
+			{ 
+			              if(s_->glbMin()==s_->glbMax())
+						return ES_FIX;
+				
+			}
+
+	}
+	indicador=0;
+	return ES_NOFIX;
+   }
+
+template <class GDV1, class GDV2>
+Actor*      SubgraphPropag<GDV1, GDV2>::copy(Space* home,bool share) {
+        return new (home) SubgraphPropag(home,share,*this);
+}
+
+
+
+
+/** \brief Visitor used by the  subgraph with scanTwoGraphsArcs G1 is a subgraph of G2*/
+template <class GDV1, class GDV2>
+struct SubgraphVisitArcs{
+        bool subsumed; ///< tells if the constraint is subsumed
+        list<pair<int,int> > remG1;///< stores arcs which must be removed from G1
+        list<pair<int,int> > incG2;///< stores arcs which must be included in G2
+        SubgraphVisitArcs(GDV1 &g1, GDV2 &g2):subsumed(true){
+        }
+        void fail(){ throw Failure(); }
+        /// called for an arc absent from g1 but in lub(g2)
+        void NoneLub(int t,int h) {
+                TRACE(cout << t << " " << h << " NoneLub " << endl); }
+        /// called for an arc absent from g1 but in glb(g2)
+        void NoneGlb(int t,int h) {
+                TRACE(cout << t << " " << h << " NoneGlb " << endl); }
+        /// called for an arc in lub(g1) but absent from g2
+        void LubNone(int t,int h) {
+                remG1.push_back(make_pair(t,h));
+                TRACE(cout << t << " " << h << " LubNone " << endl); }
+        /// called for an arc in glb(g1) and not in g2
+        void GlbNone(int t,int h) {
+                TRACE(cout << t << " " << h << " GlbNone " << endl);
+                fail();                                              }
+        /// called for an arc in both lubs
+        void LubLub(int t,int h)  {
+                subsumed=false;
+                TRACE(cout << t << " " << h << " LubLub  " << endl); }
+        /// called for an arc in lub(g1) and glb(g2)
+        void LubGlb(int t,int h)  {
+                TRACE(cout << t << " " << h << " LubGlb  " << endl); }
+        /// called for an arc in glb(g1) and in lub(g2)
+        void GlbLub(int t,int h)  {
+                incG2.push_back(make_pair(t,h));
+                TRACE(cout << t << " " << h << " GlbLub  " << endl); }
+        /// called for an arc in both glb
+        void GlbGlb(int t,int h)  {
+                TRACE(cout << t << " " << h << " GlbGlb  " << endl); }
+};
+/** \brief Visitor used by the  subgraph with scanTwoGraphsArcs G1 is a subgraph of G2*/
+template <class GDV1, class GDV2>
+struct SubgraphVisitNodes{
+        bool subsumed; ///< tells if the constraint is subsumed
+        list<int> remG1;///< stores nodes which must be removed from G1
+        list<int> incG2;///< stores nodes which must be included in G2
+        SubgraphVisitNodes(GDV1 &g1, GDV2 &g2):subsumed(true){
+        }
+        void fail(){ throw Failure(); }
+        /// called for a node absent from g1 but in lub(g2)
+        void NoneLub(int n) {
+                TRACE(cout << n << " NoneLub " << endl); }
+        /// called for a node absent from g1 but in glb(g2)
+        void NoneGlb(int n) {
+                TRACE(cout << n << " NoneGlb " << endl); }
+        /// called for a node in lub(g1) but absent from g2
+        void LubNone(int n) {
+                remG1.push_back(n);
+                TRACE(cout << n << " LubNone " << endl); }
+        /// called for a node in glb(g1) and not in g2
+        void GlbNone(int n) {
+                TRACE(cout << n << " GlbNone " << endl);
+                fail();                                              }
+        /// called for a node in both lubs
+        void LubLub(int n)  {
+                subsumed=false;
+                TRACE(cout << n << " LubLub  " << endl); }
+        /// called for a node in lub(g1) and glb(g2)
+        void LubGlb(int n)  {
+                TRACE(cout << n << " LubGlb  " << endl); }
+        /// called for a node in glb(g1) and in lub(g2)
+        void GlbLub(int n)  {
+                incG2.push_back(n);
+                TRACE(cout << n << " GlbLub  " << endl); }
+        /// called for a node in both glb
+        void GlbGlb(int n)  {
+                TRACE(cout << n << " GlbGlb  " << endl); }
+};
+
+
+
+//using namespace Gecode::Set;
+/// \brief performs the propagation
+template <class GDV1, class GDV2>
+ExecStatus SubgraphPropag<GDV1, GDV2>::propagate(Space* home,ModEventDelta med) {
+        TRACE(cout << "subgraph propagate1" << home << endl<<g1<<g2<<endl;)
+	 //the flag is set, so that the tells made by this propagator dont trigger the advisors subscribed to the same propagator
+	activo=1;
+	 //the propagator is propagating so we count it.
+	cuenta++;
+
+        /*remove & add the arcs and nodes which are in the vectors*/
+
+	 for (int i=0;i<addnodes.size();i++){
+		GECODE_ME_CHECK(g2._nodeIn(home,addnodes[i]));
+	}
+	for (int i=0;i<remnodes.size();i++){
+		GECODE_ME_CHECK(g1._nodeOut(home,remnodes[i]));
+	}
+	for (int i=0;i<addArcs.size();i++)	{
+		std::pair< int, int>arc=addArcs[i];
+		GECODE_ME_CHECK(g2._arcIn(home,arc.first,arc.second));
+	}
+	for (int i=0;i<remArcs.size();i++)	{
+		std::pair< int, int>arc=remArcs[i];
+		if(g1.nodeIsInUB(arc.first) && g1.nodeIsInUB(arc.second)){
+			   GECODE_ME_CHECK(g1._arcOut(home,arc.first,arc.second));
+		}
+	}
+        //the vectors are cleared
+	addArcs.clear();
+	remArcs.clear();
+	remnodes.clear();
+	addnodes.clear();
+        //if indicator is different from 0, then no complete propagation is needed
+	if(indicador!=0)
+	{
+		//the flag is released
+		activo=0;
+		return ES_NOFIX;
+	}
+       //in case complete propagation is needed:
+
+
+        bool subsumed;
+        {
+            SubgraphVisitNodes<GDV1,GDV2> visit(g1,g2);
+            try{
+                scanTwoGraphsNodes(g1,g2,visit);
+            } catch (Failure e) {
+                    return ES_FAILED;
+            }
+            typedef StlToGecodeValIterator<list<int>::iterator> ItVal;
+            TRACE(cout << "removing nodes "<< visit.remG1<< endl);
+            ItVal remG1(visit.remG1.begin(),visit.remG1.end());
+            GECODE_ME_CHECK(g1._nodesOut(home,remG1));
+            TRACE(cout << "adding nodes "<< visit.incG2<< endl);
+            ItVal incG2(visit.incG2.begin(),visit.incG2.end());
+            GECODE_ME_CHECK(g2._nodesIn(home,incG2));
+            subsumed = visit.subsumed;
+        }
+        {
+            SubgraphVisitArcs<GDV1,GDV2> visit(g1,g2);
+            try{
+                scanTwoGraphsArcs(g1,g2,visit);
+            } catch (Failure e) {
+                    return ES_FAILED;
+            }
+            typedef StlToGecodeValIterator<list<pair<int,int> >::iterator> ItVal;
+            TRACE(cout << "removing arcs "<< visit.remG1<< endl);
+            ItVal remG1(visit.remG1.begin(),visit.remG1.end());
+            GECODE_ME_CHECK(g1._arcsOut(home,remG1));
+            TRACE(cout << "adding arcs "<< visit.incG2<< endl);
+            ItVal incG2(visit.incG2.begin(),visit.incG2.end());
+            GECODE_ME_CHECK(g2._arcsIn(home,incG2));
+            subsumed &= visit.subsumed;
+        }
+	indicador=-1;
+	activo=0;
+        if (subsumed){ //lub(g1)<=glb(g2)
+               TRACE(cout << "subsumed" <<endl);
+              if (g1.assigned() && g2.assigned()) // bug semi-fix should really return subsumed always
+                return ES_SUBSUMED((Propagator*)this,dispose(home));
+               
+        }
+        return ES_FIX;
+}
+
+
+
+
+} }
+

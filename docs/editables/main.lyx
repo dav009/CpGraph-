@@ -1,0 +1,391 @@
+#LyX 1.5.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass book
+\begin_preamble
+\usepackage{lscape}
+\end_preamble
+\language spanish
+\inputencoding auto
+\font_roman lmodern
+\font_sans default
+\font_typewriter default
+\font_default_family rmdefault
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\paperfontsize default
+\spacing single
+\papersize letterpaper
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\leftmargin 3cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 2cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+\begin_inset Include \include{PORTADA2.lyx}
+preview false
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Include \include{reconocimientos.lyx}
+preview false
+
+\end_inset
+
+
+\begin_inset LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Include \include{capitulo1.lyx}
+preview false
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Include \include{capitulo2.lyx}
+preview false
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Include \include{capitulo3.lyx}
+preview false
+
+\end_inset
+
+
+\begin_inset Include \include{capitulo4.lyx}
+preview false
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Include \include{capitulo5.lyx}
+preview false
+
+\end_inset
+
+
+\begin_inset Include \include{capitulo6.lyx}
+preview false
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key1"
+
+\end_inset
+
+Gregoire Dooms.The CP(Graph) Computation Domain in Constraint Programming
+ 2005-2006.
+ Tesis(Doctorado en Ciencias Aplicadas).
+ Universite catholique de Louvain.
+ www.info.ucl.ac.be/~dooms/thesis.pdf
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key2"
+
+\end_inset
+
+Krzysztof R.
+ Apt.
+ Principles of constraint programming.
+ CWI, Amsterdam, The Netherlands.Cambridge University Press, 2003.
+ ISBN 978-0-521-82583-2.
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key3"
+
+\end_inset
+
+F.
+ Rossi, P.Van Beek, T.Walsh.
+ Handbook of constraint programming.
+ Elsevier, 2006.
+ ISBN 978-0-444-52726-4.
+\end_layout
+
+\begin_layout Bibliography
+
+\lang english
+\begin_inset LatexCommand bibitem
+key "key4"
+
+\end_inset
+
+Programming Constraint Services.
+
+\lang spanish
+ 
+\end_layout
+
+\begin_layout Bibliography
+
+\lang english
+\begin_inset LatexCommand bibitem
+key "key6"
+
+\end_inset
+
+http://eisc.univalle.edu.co/materias/Matematicas_Discretas_2/pdf/introd_grafos_01.pd
+f
+\end_layout
+
+\begin_layout Bibliography
+
+\lang english
+\begin_inset LatexCommand bibitem
+key "key7"
+
+\end_inset
+
+
+\lang spanish
+José Juan Carreño Carreño, Introducción de Grafos.
+ Universidad politecnica de madrid.
+ www.eui.upm.es/~jjcc/md200506personal/material/Introduccion_Grafos.pdf
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key8"
+
+\end_inset
+
+http://ktiml.mff.cuni.cz/~bartak/constraints/intro.html
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-15"
+
+\end_inset
+
+Luis Quesada, Solving Constrained Graph Problems using Reachability Constraints
+ based on Transitive Closure and Dominators, 2006.Tesis(Doctorado en Ciencias
+ Aplicadas).Université catholique de Louvain.
+ http://edoc.bib.ucl.ac.be:81/ETD-db/collection/available/BelnUcetd-11272006-164211/
+unrestricted/thesis.pdf 
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-19"
+
+\end_inset
+
+Equipo de Gecode,Benchmark de Gecode con respecto a otras alternativas Similares.
+ http://www.gecode.org/benchmarks.html
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-20"
+
+\end_inset
+
+Sven Lämmermann,Christian Schulte,Thomas Sjöland.Constraints.
+ Royal Institute of Technology Stockholm, Sweden.
+ http://web.it.kth.se/~cschulte/talks/Constraints@KTH.pdf
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-21"
+
+\end_inset
+
+Cambios de Gecode 2.0.0 con respecto a Gecode 1.3.1 http://www.gecode.org/gecode-doc-l
+atest/PageChanges_2_0_0.html
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-4"
+
+\end_inset
+
+Equipo de Gecode,Sitio Web Oficial de Gecode.
+ http://www.gecode.org
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-2"
+
+\end_inset
+
+http://en.wikipedia.org/wiki/Kneser_graph.
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-1"
+
+\end_inset
+
+Tack G,Constraint Propagation -Models , Techniques , Implementation Saarland
+ University , Germany ,2009
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "introtocpgraph"
+
+\end_inset
+
+CP(Graph): Introducing a Graph Computation Domain in Constraint Programming
+ ,Gregoire Dooms, Yves Deville, Pierre Dupont,Department of Computing Science
+ and Engineering Université́ catholique de Louvain .
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-9"
+
+\end_inset
+
+ Gecode, An Open Constraint Solving Library,Guido Tack, Workshop on Open-Source
+ Software for Integer and Constraint Programming (OSSICP).
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-10"
+
+\end_inset
+
+ Gecode 2.1.1 Components, Raphael Reischuk , Marzo , 2008.
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-11"
+
+\end_inset
+
+ Space::status, Raphael Reischuk, http://www.ps.uni-sb.de/~raphael/bachelor/downloa
+ds/gecode-space_status.pdf.
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-12"
+
+\end_inset
+
+Techniques for Efficient Constraint Propagation - Mikael Lagerkvist , Stockholm
+ Sweden 2008.
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-16"
+
+\end_inset
+
+Pagina Oficial de CP(Graph) - http://cpgraph.info.ucl.ac.be/
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-18"
+
+\end_inset
+
+CP(Graph) Version No Oficial - http://www.cs.brown.edu/~gdooms/Software.html
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-52"
+
+\end_inset
+
+Gecodes ChangeLog - http://www.gecode.org/changes.html.
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+label "24"
+key "key-13"
+
+\end_inset
+
+Gecode's Architecture, Raphael Reischuk,Graduate Seminar PS Lab,Marzo, 2008,http
+://www.ps.uni-sb.de/~raphael/bachelor/downloads/talk2-80313.pdf.
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+key "key-17"
+
+\end_inset
+
+http://foldoc.org/
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset LatexCommand bibitem
+label "25"
+key "key-14"
+
+\end_inset
+
+Didier Croes, http://www.bigre.ulb.ac.be/Users/didier/pathfinding/images/badconnecti
+on.png.
+\end_layout
+
+\end_body
+\end_document

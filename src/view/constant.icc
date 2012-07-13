@@ -1,0 +1,148 @@
+
+/*
+ *  Main authors:
+ *     Grégoire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Grégoire Dooms (Université catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 10:57:21 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 271 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+
+
+namespace Gecode { namespace Graph {
+
+  forceinline
+  ConstantView<Graph>::ConstantView(void)  {}
+
+  forceinline
+  ConstantView<Graph>::ConstantView(Space* home, const Graph& g)
+   {
+      G = static_cast<Graph*>(home->alloc(g.size()));
+      G->load(g);
+      }
+    }
+  }
+
+  forceinline bool
+  ConstantView<Graph>::assigned(void) const { return true; }
+
+  forceinline bool
+  ConstantView<Graph>::containsNode(int i) const {
+    for (unsigned int j=size; j--; ) {
+      if (ranges[2*j+1] < i)
+	return false;
+      if (ranges[2*j] >= i)
+	return true;
+    }
+    return false;
+  }
+
+  forceinline bool
+  ConstantView<Graph>::notContainsNode(int i) const {
+    return !contains(i);
+  }
+
+
+  forceinline ModEvent
+  ConstantView<Graph>::includeNode(Space* home,int c) {
+    return containsNode(c) ? ME_GRAPH_NONE : ME_GRAPH_FAILED;
+  }
+
+
+  forceinline void
+  ConstantView<Graph>::subscribe(Space* home,Propagator*,PropCond) {}
+  forceinline void
+  ConstantView<Graph>::cancel(Propagator*,PropCond) {}
+
+  forceinline ModEvent
+  ConstantView<Graph>::pme(const Propagator*) {
+    return ME_GRAPH_NONE;
+  }
+  forceinline PropModEvent
+  ConstantView<Graph>::pme(ModEvent me) {
+    return GraphVarImp::pme(me);
+  }
+
+  forceinline void
+  ConstantView<Graph>::update(Space* home, bool share, ConstantView& p) {
+    // dispose old ranges
+    if (size>0) {
+      home->reuse(ranges, 2*size*sizeof(int));
+    }
+
+    domSize = p.domSize;
+    size = p.size;
+    if (size == 0) {
+      ranges = NULL;
+    } else {
+      // copy ranges from p
+      ranges = static_cast<int*>(home->alloc(2*size*sizeof(int)));
+      for (unsigned int i=size; i--; ) {
+	ranges[2*i]   = p.ranges[2*i];
+	ranges[2*i+1] = p.ranges[2*i+1];
+      }
+    }
+  }
+
+
+
+  /*
+   * Testing
+   *
+   */
+
+  forceinline bool
+  ConstantView<Graph>::operator ==(const ConstantView& x) const {    
+    if (size!=x.size || domSize!=x.domSize)
+      return false;
+    for (int i=size; i--; )
+      if (ranges[2*i]   != x.ranges[2*i] ||
+	  ranges[2*i+1] != x.ranges[2*i+1])
+	return false;
+    return true;
+  }
+
+  forceinline bool
+  ConstantView<Graph>::operator !=(const ConstantView& x) const {
+    return !(operator==(x));
+  }
+
+  forceinline bool
+  ConstantView<Graph>::operator < (const ConstantView& x) const {
+    if (size < x.size)
+      return true;
+    if (domSize < x.domSize)
+      return true;
+    for (int i=size; i--; )
+      if (ranges[2*i]   < x.ranges[2*i] ||
+	  ranges[2*i+1] < x.ranges[2*i+1])
+	return true;
+    return false;
+  }
+
+  forceinline bool
+  ConstantView<Graph>::operator > (const ConstantView& x) const {
+    if (size > x.size)
+      return true;
+    if (domSize > x.domSize)
+      return true;
+    for (int i=size; i--; )
+      if (ranges[2*i]   > x.ranges[2*i] ||
+	  ranges[2*i+1] > x.ranges[2*i+1])
+	return true;
+    return false;
+  }
+
+
+// STATISTICS: graph-var
+

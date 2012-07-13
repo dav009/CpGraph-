@@ -1,0 +1,354 @@
+
+/*
+ *  Main authors:
+ *     Grégoire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Grégoire Dooms (Université catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 21:45:01 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 282 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+
+#include "kernel.hh"
+#include "set.hh"
+#include <boost/utility.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/iteration_macros.hpp>
+enum PropagDir {PDG2S=1,PDS2G=2,PDBOTH=3};
+#undef TRACE
+//#define TRACE(A) A
+#define TRACE(A)
+
+typedef std::map<int,int> Eintmap;
+
+namespace Gecode { namespace Graph {
+
+
+
+//using namespace boost;
+
+
+
+
+/** \brief A Node of a boost Gecode::Graph::Graph 
+ *
+ * \ingroup TaskPropGraph
+ * */
+struct Node{
+        int id;
+        int index;
+};
+
+/** \brief An Edge of a boost Gecode::Graph::Graph  
+ *
+ * added edge_index property in the graph because of a limitation of BGL:
+ * impossible to have a external edge index (because of edge_descriptor not supporting operator< )
+ * See   http://lists.boost.org/boost-users/2005/08/13561.php
+ *       http://lists.boost.org/boost-users/2005/07/12500.php
+ * for reference.
+ * \ingroup TaskPropGraph
+ */
+struct Edge{
+        int index;
+};
+// using vecS for  vertex  structure invalidates the vertex descriptors after each vertex removal
+// hence listS
+/// \brief The boost graph datastructure used in CP(Graph)
+typedef boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, Node, Edge > Graph;
+
+
+/** \brief Base class for Graph data-structure to represent the bounds of the graph domain for branchings and propagators 
+ *
+ * These boost data-structures enable to reuse the boost.graph algorithms to implement propagator and branchings
+ * A propagator or branching might use this class to implement a graph algorithm on the bounds of the graph domain.
+ * \ingroup TaskPropGraph
+ */
+template <class GView>
+class BoundsGraphs {
+        protected:
+                // the graphs UB and LB carry their internal ids (for nodes)
+                Gecode::Graph::Graph UB; 
+                Gecode::Graph::Graph::vertex_descriptor *UB_v;  // maps internal ids to vertex_descriptors
+                Gecode::Graph::Graph LB;
+                Gecode::Graph::Graph::vertex_descriptor *LB_v; // maps internal ids to vertex_descriptors
+                GView g; 
+                int numNodes;//< initial number of nodes (ids are from 0 to numNodes-1)
+
+        public:
+                /// Constructor from a Graph View
+                BoundsGraphs(GView &g );
+                /// Destructor
+                ~BoundsGraphs();
+                /** Adds a node to LB, LB_v if not already present 
+                 * returns wether a node was added */
+                bool  safe_add_nodeLB(int j);
+                /// inits the LB_v and UB_v members.
+                void init_LBUB_v();
+                /** \brief Tells on the view and the graphs at once 
+                 * @{ 
+                 */
+                /// includes an arc in the graph. \a p tells if the arc must be included in the graph DS, in the view or in both.
+                forceinline ModEvent arcIn(Space * home, int a, int b,PropagDir p=PDBOTH);
+                /// excludes an arc from the graph. \a p tells if the arc must be included in the graph DS, in the view or in both.
+                forceinline ModEvent arcOut(Space* home, int a, int b,PropagDir p=PDBOTH);
+                /// includes a node in the graph. \a p tells if the arc must be included in the graph DS, in the view or in both.
+                forceinline ModEvent nodeIn(Space* home, int a,PropagDir p=PDBOTH);
+                /// excludes a node from the graph. \a p tells if the arc must be included in the graph DS, in the view or in both.
+                forceinline ModEvent nodeOut(Space* home, int a,PropagDir p=PDBOTH);
+                // @}
+                /** \brief Resets the bundled edge indexes of the UB graph */
+                void resetEdgeIndexUB();
+                /** \brief Resets the bundled edge indexes of the LB graph */
+                void resetEdgeIndexLB();
+                /** \brief Resets the bundled vertex indexes of the UB graph */
+                void resetVertexIndexUB();
+                /** \brief Resets the bundled vertex indexes of the LB graph */
+                void resetVertexIndexLB();
+};
+
+
+template <class GDV>
+BoundsGraphs<GDV>::BoundsGraphs(GDV &g):UB(g.lubOrder()),LB(g.glbOrder()),g(g),numNodes(g.maxNodeId()+1){
+
+        // Build UB and UB_v
+        TRACE(cout << endl << "UB:"<< endl);
+        typename GDV::LubNodeRangesIterator it = g.iter_nodes_ranges_UB();
+
+        UB_v = new Gecode::Graph::Graph::vertex_descriptor[numNodes]; 
+        for (int i=numNodes; i--; UB_v[i]=NULL);
+        
+        Gecode::Graph::Graph::vertex_iterator gi,gi_end;
+       boost::tie(gi,gi_end) = vertices(UB);
+        for (;it() && gi!=gi_end;++it){
+                for (int i=it.min();i<=it.max() && gi!= gi_end; i++,gi++){
+                        TRACE(cout << i << " ");
+                        UB[*gi].id = i;
+                        UB_v[i] = *gi;
+                }
+        }
+        TRACE(cout << endl << "LB:"<< endl);
+        assert(gi==gi_end && !it());
+        //
+        // Build LB and LB_v
+        typename GDV::GlbNodeRangesIterator it2 = g.iter_nodes_ranges_LB();
+        LB_v = new Gecode::Graph::Graph::vertex_descriptor[numNodes];
+        for (int i=numNodes; i--; LB_v[i]=NULL);
+       boost::tie(gi,gi_end) = vertices(LB);
+        for (;it2() && gi!=gi_end;++it2){
+                for (int i=it2.min();i<=it2.max() && gi!= gi_end; i++,gi++){
+                        TRACE(cout << i << " ");
+                        LB[*gi].id = i;
+                        LB_v[i] = *gi;
+                }
+        }
+        TRACE(cout << endl );
+        assert(gi==gi_end && !it2());
+
+        // Add arcs to UB
+        TRACE(cout <<" arcs UB :" <<endl);
+        typename GDV::LubArcIterator  lub(g.iter_arcs_UB());
+        for (; lub(); ++lub){
+                int i,j;
+                boost::tie(i,j) = lub.val();
+                //protection against node arc inconsistencies
+                if (UB_v[i] && UB_v[j]){
+                        add_edge(UB_v[i],UB_v[j],UB);
+                        TRACE(cout << "arc("<<i<<","<<j<<")");
+                }
+        }
+        TRACE(cout <<endl);
+        // Add arcs to LB
+        TRACE(cout <<" arcs LB :" <<endl);
+        typename GDV::GlbArcIterator  glb(g.iter_arcs_LB());
+        for (; glb(); ++glb){
+                int i,j;
+                boost::tie(i,j) = glb.val();
+                //protection against node arc inconsistencies
+                safe_add_nodeLB(i);
+                safe_add_nodeLB(j);
+                add_edge(LB_v[i],LB_v[j],LB);
+                TRACE(cout << "arc("<<i<<","<<j<<")");
+        }
+        TRACE(cout <<endl);
+        resetVertexIndexUB();
+        resetVertexIndexLB();
+        resetEdgeIndexUB();
+        resetEdgeIndexLB();
+
+}
+
+template <class GDV>
+BoundsGraphs<GDV>::~BoundsGraphs(){
+        if (UB_v) delete[] UB_v;
+        if (LB_v) delete[] LB_v;
+}
+/** Adds a node to LB, LB_v if not already present 
+ * returns wether a node was added */
+template <class GDV>
+bool  BoundsGraphs<GDV>::safe_add_nodeLB(int j){
+        if (!LB_v[j]){
+                LB_v[j] = add_vertex(LB);
+                LB[LB_v[j]].id = j;
+                return true;
+        }
+        return false;
+
+}
+template <class GDV>
+void BoundsGraphs<GDV>::init_LBUB_v(){
+        UB_v = new Gecode::Graph::Graph::vertex_descriptor[numNodes];
+        for (int i=numNodes; i--; UB_v[i]=NULL);
+        Gecode::Graph::Graph::vertex_iterator i,i_end;
+       boost::tie(i,i_end) = vertices(UB);
+        for (;i!=i_end; ++i){
+                UB_v[UB[*i].id] = *i;
+        } 
+
+        LB_v = new Gecode::Graph::Graph::vertex_descriptor[numNodes];
+        for (int i=numNodes; i--; LB_v[i]=NULL);
+       boost::tie(i,i_end) = vertices(LB);
+        for (;i!=i_end; ++i){
+                LB_v[LB[*i].id] = *i;
+        } 
+}
+template <class GDV>
+forceinline ModEvent BoundsGraphs<GDV>::arcIn(Space* home, int a, int b,PropagDir p){
+        // test (a,b) in UB
+        //DEBUG
+        Gecode::Graph::Graph::edge_descriptor e;
+        Gecode::Graph::Graph::vertex_descriptor u = UB_v[a];
+        Gecode::Graph::Graph::vertex_descriptor v = UB_v[b];
+        bool in;
+       boost::tie(e,in) = edge(u,v,UB);
+        if (!in){ 
+                TRACE(cout << "returning arcIn" << a << " "<< b<< " ME_SET_FAILED"<< endl);
+                return Set::ME_SET_FAILED;   //XXX
+        }
+        if (p & PDS2G){
+                // put it in LB
+                safe_add_nodeLB(a);
+                u = LB_v[a];
+                safe_add_nodeLB(b);
+                v = LB_v[b];
+               boost::tie(e,b) = edge(u,v,LB);
+                if (!in) 
+                        add_edge(u,v,LB);
+        }
+        if (p & PDG2S){
+                return g._arcIn(home,a,b);
+        }
+        return Set::ME_SET_NONE;
+}
+
+template <class GDV>
+forceinline ModEvent BoundsGraphs<GDV>::arcOut(Space* home, int a, int b,PropagDir p){
+        // fail if in LB
+        Gecode::Graph::Graph::edge_descriptor e;
+        Gecode::Graph::Graph::vertex_descriptor u = LB_v[a];
+        Gecode::Graph::Graph::vertex_descriptor v = LB_v[b];
+        bool in;
+        if (u && v){
+               boost::tie(e,in) = edge(u,v,LB);
+                if (in){ 
+                        TRACE(cout << "returning arcOut" << a << " "<< b<< " ME_SET_FAILED"<< endl);
+                        return Set::ME_SET_FAILED;   //XXX
+                }
+        }
+
+        if (p & PDS2G){
+                // put it out the UB
+                u = UB_v[a];
+                v = UB_v[b];
+                if (u && v){
+                       boost::tie(e,in) = edge(u,v,UB);
+                        if (in) remove_edge(u,v,UB);
+                }
+        }
+        if (p & PDG2S){
+                return g._arcOut(home,a,b);
+        }
+        return Set::ME_SET_NONE;
+}
+template <class GDV>
+forceinline ModEvent BoundsGraphs<GDV>::nodeIn(Space* home, int a,PropagDir p){
+        cout << "propag adding node" << a<<endl; 
+        // test a in UB
+        if (!UB_v[a]){
+                TRACE(cout << "returning nodeIn" << a << " ME_SET_FAILED"<< endl);
+                return Set::ME_SET_FAILED;   //XXX
+        }
+        if (p & PDS2G){
+                // put it in LB
+                safe_add_nodeLB(a);
+        }
+        if (p & PDG2S){
+                // put it in nodes
+                return g._nodeIn(home,a);
+        }
+        return Set::ME_SET_NONE;
+}
+
+template <class GDV>
+forceinline ModEvent BoundsGraphs<GDV>::nodeOut(Space* home, int a,PropagDir p){
+        // test a in LB
+        if (LB_v[a]){
+                TRACE(cout << "returning nodeOut" << a << " ME_SET_FAILED"<< endl);
+                return Set::ME_SET_FAILED; //XXX
+        } 
+
+        if (p & PDS2G){
+                // put it out UB
+                if (UB_v[a]){ 
+                        clear_vertex(UB_v[a],UB);
+                        remove_vertex(UB_v[a],UB);
+                        UB_v[a]=NULL;
+                }
+        }
+        if (p & PDG2S){
+                // put it out the nodes
+                TRACE(cout << "effectively removing it from the nodes"<< endl);
+                return g._nodeOut(home,a);
+        }
+        return Set::ME_SET_NONE;
+}
+
+
+/** Resets the bundled edge ids of the UB graph */
+template <class GDV>
+void BoundsGraphs<GDV>::resetEdgeIndexUB(){
+        int i=0;
+        BGL_FORALL_EDGES(e,UB,Gecode::Graph::Graph) 
+                UB[e].index = i++;
+}
+/** Resets the bundled edge ids of the LB graph */
+template <class GDV>
+void BoundsGraphs<GDV>::resetEdgeIndexLB(){
+        int i=0;
+        BGL_FORALL_EDGES(e,LB,Gecode::Graph::Graph) 
+                LB[e].index = i++;
+}
+/** Resets the bundled vertex ids of the UB graph */
+template <class GDV>
+void BoundsGraphs<GDV>::resetVertexIndexUB(){
+        int i=0;
+        BGL_FORALL_VERTICES(v,UB,Gecode::Graph::Graph) 
+                UB[v].index = i++;
+}
+/** Resets the bundled vertex ids of the LB graph */
+template <class GDV>
+void BoundsGraphs<GDV>::resetVertexIndexLB(){
+        int i=0;
+        BGL_FORALL_VERTICES(v,LB,Gecode::Graph::Graph) 
+                LB[v].index = i++;
+}
+
+} }

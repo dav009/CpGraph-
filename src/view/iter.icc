@@ -1,0 +1,416 @@
+
+/*
+ *  Main authors:
+ *     Gr�goire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Gr�goire Dooms (Universit� catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2006-04-28 20:07:57 +0200 (Fri, 28 Apr 2006) $
+ *     $Revision: 451 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ * Thanks to Jean-Noel Monette for various bugfixes
+ *
+ */
+
+#include <iterator>
+#include <limits>
+
+#include "view/arcnode.hh"
+#include "boost/utility.hpp"
+using namespace boost;
+using namespace std;
+
+namespace Gecode { namespace Graph {
+/** \brief converts a Stl value iterator to a Gecode Value Iterator
+ * \ingroup TaskPropIter
+ * */
+template <class iterator>
+struct StlToGecodeValIterator {
+        private:
+        iterator begin;
+        iterator end;
+        iterator cur;
+
+        public:
+        StlToGecodeValIterator(){};
+        StlToGecodeValIterator(StlToGecodeValIterator &s): begin(s.begin), end(s.end), cur(s.cur){};
+        StlToGecodeValIterator(iterator begin, iterator end): begin(begin), end(end), cur(begin){}
+
+        /// get value under the iterator
+        typename std::iterator_traits<iterator>::value_type val() {
+                return *cur;
+        }
+        /// forward the iterator
+        forceinline void operator++(void) {
+                ++cur;
+        }
+        /// test if iterator has next val.
+        forceinline bool operator()(void) {
+                return cur!=end;
+        }
+};
+/** \brief converts a Stl value iterator to a Gecode Range Iterator
+ * \ingroup TaskPropIter
+ * */
+template <class iterator>
+struct StlToGecodeRangeIterator : public Iter::Values::ToRanges<StlToGecodeValIterator<iterator> > {
+        StlToGecodeValIterator<iterator> values;
+        using Iter::Values::ToRanges<StlToGecodeValIterator<iterator> >::min;
+        using Iter::Values::ToRanges<StlToGecodeValIterator<iterator> >::max;
+        using Iter::Values::ToRanges<StlToGecodeValIterator<iterator> >::init;
+        using Iter::Values::ToRanges<StlToGecodeValIterator<iterator> >::operator++;
+        using Iter::Values::ToRanges<StlToGecodeValIterator<iterator> >::operator();
+
+        StlToGecodeRangeIterator(iterator begin, iterator end): values(begin,end){
+                init(values);
+        }
+
+};
+
+/** \brief converts a Gecode value iterator with pair<int,int> to a Gecode Value Iterator with arc ids given an ArcNode.
+ * \ingroup TaskPropIter
+ * */
+template <class I,class ArcNode=DefaultArcNode>
+struct PairToArcIdGecodeIterator {
+        I cur; ///< the underlying iterator
+        ArcNode *an; ///< the ArcNode used
+        PairToArcIdGecodeIterator(ArcNode *an, I& i): cur(i), an(an){}
+        /// get the arc id under the iterator
+        forceinline int val() {
+                int t,h;
+                boost::tie(t,h) = cur.val();
+                return an->id(t,h);
+        }
+        /// forward the iterator
+        forceinline void operator++(void) {
+                ++cur;
+        }
+        /// tests if the iterator is not at the end
+        forceinline bool operator()(void) {
+                return cur();
+        }
+};
+
+/** \brief Scans all the arcs of the Lub of a graph and calls visitor methods.
+ *
+ * visit.visitUnknown(t,h) for arcs in UB-LB and
+ * visit.visitLower(t,h) for arcs in LB
+ * The iterators are readonly so the visitor should not make tells on the graph iew
+ * \ingroup TaskPropIter
+ */
+template <class GV, class Visitor>
+void scanGraphArcs(GV &g, Visitor &visit) {
+	
+    typename GV::LubArcIterator gU(g.iter_arcs_UB());
+    typename GV::GlbArcIterator gL(g.iter_arcs_LB());
+    int t=0; int h=0 ;
+
+    while(gL()){
+    
+        std::pair<int,int> curL = gL.val();
+ 
+        std::pair<int,int> curU = gU.val();
+    
+        boost::tie(t,h) = curU;
+        while (curU != curL) {
+       
+            visit.visitUnknown(t,h);
+         
+            ++gU;
+        
+            assert(gU()); // gU \supset gL
+            boost::tie(t,h) = curU = gU.val();
+        }
+        // curU == curL
+       
+        visit.visitLower(t,h);
+      
+        ++gU;
+        ++gL;
+    } // no more LB values
+    for (; gU(); ++gU){
+        boost::tie(t,h) = gU.val();
+      
+        visit.visitUnknown(t,h);
+    }
+}
+
+
+/** \brief Scans all the arcs of the complete graph of Lub(Nodes(g)) and calls visitor methods.
+ *
+ * visit.visitUnknown(t,h) for arcs in UB-LB and
+ * visit.visitLower(t,h) for arcs in LB
+ * visit.visitOut(t,h) for arcs not in UB
+ * \ingroup TaskPropIter
+ */
+template <class GV, class Visitor>
+void scanCompleteGraphNodeArcs(GV &g, Visitor &visit){
+            typename GV::LubArcIterator gU(g.iter_arcs_UB());
+            typename GV::GlbArcIterator gL(g.iter_arcs_LB());
+            typename GV::LubNodeIterator gNt(g.iter_nodes_UB());
+            typename GV::LubNodeIterator gNh(g.iter_nodes_UB());
+            int Ut,Uh ; // INV: gU.val() == make_pair(Ut,Uh)
+            while(gL()){
+                pair<int,int> curL = gL.val();
+                pair<int,int> curU;
+                while ((curU = gU.val()) != curL) {
+                        boost::tie(Ut,Uh) = curU;
+                        while (gNt.val()!= Ut || gNh.val()!=Uh){
+                               for (;gNh();++gNh){
+                                       if (gNt.val()== Ut && gNh.val() == Uh){
+                                               goto UbFound;
+                                       }
+                                       visit.visitOut(gNt.val(), gNh.val());
+                               }
+                               gNh = g.iter_nodes_UB();
+                               ++gNt;
+                        }
+                        UbFound:
+                        visit.visitUnknown(Ut,Uh);
+                        ++gNt; ++gNh; ++gU;
+                        assert(gU()); // gU \supset gL
+                }
+                // curU == curL == (gNt.val(),gNh.val())
+                visit.visitLower(gNt.val(),gNh.val());
+                ++gNt; ++gNh; ++gU; ++gL;
+            }
+            // no more LB values
+            while (gU()){
+                        boost::tie(Ut,Uh) = gU.val();
+                        while (gNt.val()!= Ut || gNh.val()!=Uh){
+                               for (;gNh();++gNh){
+                                       if (gNt.val()== Ut && gNh.val() == Uh){
+                                               goto UbFound2;
+                                       }
+                                       visit.visitOut(gNt.val(), gNh.val());
+                               }
+                               gNh = g.iter_nodes_UB();
+                               ++gNt;
+                        }
+                        UbFound2:
+                        visit.visitUnknown(Ut,Uh);
+                        ++gNt; ++gNh; ++gU;
+            }
+            // no more UB values
+            for (; gNt(); ++gNt){
+                  for (;gNh();++gNh){
+                        visit.visitOut(gNt.val(), gNh.val());
+                  }
+                  gNh = g.iter_nodes_UB();
+            }
+
+}
+
+
+
+
+
+
+
+
+/**  \brief scan the arcs of g1 and g2 and calls a visitor accordingly
+ *
+ *   The visitor must implement these methods, named after
+ *   the state of the arc with respect to g1 and g2.
+ *
+ *   Lub means the arc is an unknown arc (in Lub/Glb)
+ *   Glb means the arc is a mandatory arc (in Glb)
+ *   None means the arc is forbidden (not in Lub)
+ *
+ *   LubNone, LubLub, LubGlb,
+ *   GlbNone, GlbLub, GlbGlb,
+ *   NoneLub, NoneGlb
+ *
+ *   They take (int t, int h) as arguments.
+ * \ingroup TaskPropIter
+ */
+template <class GV1, class GV2, class Visitor>
+void scanTwoGraphsArcs (GV1 &g1, GV2 &g2, Visitor &visit) {
+                typename GV1::LubArcIterator g1U(g1.iter_arcs_UB());
+                typename GV1::GlbArcIterator g1L(g1.iter_arcs_LB());
+                typename GV2::LubArcIterator g2U(g2.iter_arcs_UB());
+                typename GV2::GlbArcIterator g2L(g2.iter_arcs_LB());
+                int type=1;
+
+                /* schema:
+                 * in a loop:
+                 *    search the minimal value.
+                 *    call the visitor with the current minimum value;
+                 *    increment the iterators with that minimal value
+                 */
+
+
+                #define MAXPAIR  (std::make_pair(std::numeric_limits<int>::max(), std::numeric_limits<int>::max()))
+
+                while (type!=0){
+                        pair<int,int> minA = MAXPAIR; //search the minimum val
+                        if (g1U() && g1U.val() < minA) minA = g1U.val();
+                        if (g1L() && g1L.val() < minA) minA = g1L.val();
+                        if (g2U() && g2U.val() < minA) minA = g2U.val();
+                        if (g2L() && g2L.val() < minA) minA = g2L.val();
+                        int t,h;
+                        boost::tie(t,h) = minA;
+
+                        type = 0;// looks which iter is on the min val
+                        if (g1U() && g1U.val() == minA) { ++type; ++g1U; } type <<= 1;
+                        if (g1L() && g1L.val() == minA) { ++type; ++g1L; } type <<= 1;
+                        if (g2U() && g2U.val() == minA) { ++type; ++g2U; } type <<= 1;
+                        if (g2L() && g2L.val() == minA) { ++type; ++g2L; } ;
+
+
+                        switch (type){
+                                case 0 : break;
+                                case 2 : visit.NoneLub(t,h);  break;
+                                case 3 : visit.NoneGlb(t,h);  break;
+                                case 8 : visit.LubNone(t,h);  break;
+                                case 10: visit.LubLub(t,h);   break;
+                                case 11: visit.LubGlb(t,h);   break;
+                                case 12: visit.GlbNone(t,h);  break;
+                                case 14: visit.GlbLub(t,h);   break;
+                                case 15: visit.GlbGlb(t,h);   break;
+                                default: assert(false);
+                        }
+                }
+}
+
+/**  \brief scan the complete graph built over the nodes of the
+ *   node val iterator \a nVals
+ *
+ *   The visitor must implement these methods, named after
+ *   the state of the arc with respect to \a g1 and \a g2.
+ *
+ *   Lub means the arc is an unknown arc (in Lub/Glb)
+ *   Glb means the arc is a mandatory arc (in Glb)
+ *   None means the arc is forbidden (not in Lub)
+ *
+ *   LubNone, LubLub, LubGlb,
+ *   GlbNone, GlbLub, GlbGlb,
+ *   NoneLub, NoneGlb, NoneNone
+ *
+ *   They take (int t, int h) as arguments.
+ * \ingroup TaskPropIter
+ */
+template <class GV1, class GV2, class NodeValIter, class Visitor>
+void scanTwoGraphsCompleteNodeArcs (GV1 &g1, GV2 &g2, NodeValIter nVals, Visitor &visit) {
+
+                typename GV1::LubArcIterator g1U(g1.iter_arcs_UB());
+                typename GV1::GlbArcIterator g1L(g1.iter_arcs_LB());
+                typename GV2::LubArcIterator g2U(g2.iter_arcs_UB());
+                typename GV2::GlbArcIterator g2L(g2.iter_arcs_LB());
+
+
+
+                for (NodeValIter Nt(nVals);Nt();++Nt){
+                    for (NodeValIter Nh(nVals);Nh();++Nh){
+                        int t=Nt.val();
+                        int h=Nh.val();
+                        pair<int,int> A = make_pair(t,h);
+
+                        bool adv=true;
+                        while (adv){ //advance all iters before A
+                            adv=false;
+                            if (g1U() && g1U.val() < A) { ++g1U; adv=true;}
+                            if (g1L() && g1L.val() < A) { ++g1L; adv=true;}
+                            if (g2U() && g2U.val() < A) { ++g2U; adv=true;}
+                            if (g2L() && g2L.val() < A) { ++g2L; adv=true;}
+                        }// INV: all iter >= A
+                        int type = 0;
+                        if (g1U() && g1U.val() == A) { ++type; ++g1U; } type <<= 1;
+                        if (g1L() && g1L.val() == A) { ++type; ++g1L; } type <<= 1;
+                        if (g2U() && g2U.val() == A) { ++type; ++g2U; } type <<= 1;
+                        if (g2L() && g2L.val() == A) { ++type; ++g2L; } ;
+                        switch (type){
+                                case 0 : visit.NoneNone(t,h); break;
+                                case 2 : visit.NoneLub(t,h);  break;
+                                case 3 : visit.NoneGlb(t,h);  break;
+                                case 8 : visit.LubNone(t,h);  break;
+                                case 10: visit.LubLub(t,h);   break;
+                                case 11: visit.LubGlb(t,h);   break;
+                                case 12: visit.GlbNone(t,h);  break;
+                                case 14: visit.GlbLub(t,h);   break;
+                                case 15: visit.GlbGlb(t,h);   break;
+                                default: assert(false);
+                        }
+                    }
+                }
+}
+
+
+/**  \brief scan the nodes of g1 and g2 and calls a visitor accordingly
+ *
+ *   The visitor must implement these methods, named after
+ *   the state of the node with respect to g1 and g2.
+ *
+ *   Lub means the node is an unknown node (in Lub/Glb)
+ *   Glb means the node is a mandatory node (in Glb)
+ *   None means the node is forbidden (not in Lub)
+ *
+ *   LubNone, LubLub, LubGlb,
+ *   GlbNone, GlbLub, GlbGlb,
+ *   NoneLub, NoneGlb
+ *
+ *   They take (int n) as arguments.
+ * \ingroup TaskPropIter
+ */
+template <class GV1, class GV2, class Visitor>
+void scanTwoGraphsNodes (GV1 &g1, GV2 &g2, Visitor &visit) {
+                typename GV1::LubNodeIterator g1U(g1.iter_nodes_UB());
+                typename GV1::GlbNodeIterator g1L(g1.iter_nodes_LB());
+                typename GV2::LubNodeIterator g2U(g2.iter_nodes_UB());
+                typename GV2::GlbNodeIterator g2L(g2.iter_nodes_LB());
+                int type=1;
+
+                /* schema:
+                 * in a loop:
+                 *    search the minimal value.
+                 *    call the visitor with the current minimum value;
+                 *    increment the iterators with that minimal value
+                 */
+
+
+                #define MAXINT  (std::numeric_limits<int>::max())
+
+                while (type!=0){
+                        int minN = MAXINT; //search the minimum val
+                        if (g1U() && g1U.val() < minN) minN = g1U.val();
+                        if (g1L() && g1L.val() < minN) minN = g1L.val();
+                        if (g2U() && g2U.val() < minN) minN = g2U.val();
+                        if (g2L() && g2L.val() < minN) minN = g2L.val();
+
+                        type = 0;// looks which iter is on the min val
+                        if (g1U() && g1U.val() == minN) { ++type; ++g1U; } type <<= 1;
+                        if (g1L() && g1L.val() == minN) { ++type; ++g1L; } type <<= 1;
+                        if (g2U() && g2U.val() == minN) { ++type; ++g2U; } type <<= 1;
+                        if (g2L() && g2L.val() == minN) { ++type; ++g2L; } ;
+
+
+                        switch (type){
+                                case 0 : break;
+                                case 2 : visit.NoneLub(minN);  break;
+                                case 3 : visit.NoneGlb(minN);  break;
+                                case 8 : visit.LubNone(minN);  break;
+                                case 10: visit.LubLub(minN);   break;
+                                case 11: visit.LubGlb(minN);   break;
+                                case 12: visit.GlbNone(minN);  break;
+                                case 14: visit.GlbLub(minN);   break;
+                                case 15: visit.GlbGlb(minN);   break;
+                                default: assert(false);
+                        }
+                }
+}
+
+
+
+
+
+
+} }
+

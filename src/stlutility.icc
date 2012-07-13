@@ -1,0 +1,105 @@
+
+/*
+ *  Main authors:
+ *     Grégoire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Grégoire Dooms (Université catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 21:15:36 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 280 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+
+#ifndef STLUTILITY_ICC
+#define STLUTILITY_ICC
+
+#include <list>
+#include <vector>
+#include <utility>
+
+/// outputs a vector<T> 
+template <class T>
+std::ostream&
+operator<<(std::ostream& os, const std::vector<T> &v){
+        os << "[";
+        for (typename std::vector<T>::const_iterator  i=v.begin(); i!=v.end(); ++i){
+                if (i!=v.begin()) { os <<", "; }
+                os << *i;
+        }
+        os << "]";
+        return os;
+}
+/// outputs a std::pair<T1,T2> 
+template <class T1,class T2>
+std::ostream&
+operator<<(std::ostream& os, const std::pair<T1,T2>  &p){
+        os << "(" << p->first << ", " << p->second << ")"; 
+        return os;
+}
+/// outputs a std::list of <T> 
+template <class T>
+std::ostream&
+operator<<(std::ostream& os, std::list<T> &l){
+        os << "[";
+        for (typename std::list<T>::const_iterator  i=l.begin(); i!=l.end(); ++i){
+                if (i!=l.begin()) { os <<", "; }
+                os << *i;
+        }
+        os << "]";
+        return os;
+}
+//TODO check we can get rid of this one 
+/// outputs a std::list of std::pair<T1,T2> 
+template <class T1,class T2>
+std::ostream&
+operator<<(std::ostream& os, std::list<std::pair<T1,T2> > &l){
+        os << "[";
+        for (typename std::list<std::pair<T1,T2> >::const_iterator  i=l.begin(); i!=l.end(); ++i){
+                if (i!=l.begin()) { os <<", "; }
+                os << "(" << i->first << ", " << i->second << ")"; 
+        }
+        os << "]";
+        return os;
+}
+namespace Gecode { namespace Graph {
+/** find the minimum val from a container in between two iterators */
+template <class iterator>
+typename std::iterator_traits<iterator>::value_type   
+    minimum(iterator begin, iterator end){
+            typedef typename std::iterator_traits<iterator>::value_type  T;
+            struct fmin : public std::unary_function<T,void>{
+                    T min;
+                    fmin(T init): min(init){}
+                    void operator() (T x) { if (x<min) min=x; }
+            };
+            fmin v;
+            std::for_each(begin,end,v);
+            return v.min;
+    }
+/** find the first iterator pointing on the minimum val from a container in between two iterators */
+template <class iterator>
+iterator
+    minimum_index(iterator begin, iterator end){
+            typedef typename std::iterator_traits<iterator>::value_type  T;
+            if (begin==end) return end;
+            T min = *begin;
+            iterator min_index = begin;
+            
+            for (iterator cur = begin; cur!=end; ++cur){
+                    if (*cur<min){
+                            min = *cur;
+                            min_index = cur;
+                    }
+            }
+            return min_index;
+    }
+} }
+#endif

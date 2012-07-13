@@ -1,0 +1,106 @@
+
+/*
+ *  Main authors:
+ *     Grégoire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Grégoire Dooms (Université catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 10:57:21 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 271 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+
+
+
+
+namespace Gecode { namespace Graph {
+
+
+  /**
+   * \defgroup TaskActorGraphMEPC Graph modification events and propagation conditions
+   * \ingroup TaskActorSet
+   */
+
+  //@{
+
+  /// Domain operation has resulted in failure
+  const ModEvent ME_GRAPH_FAILED = ME_GEN_FAILED;
+  /// Domain operation has not changed domain
+  const ModEvent ME_GRAPH_NONE  = ME_GEN_NONE;
+  /// Domain operation has resulted in a value (assigned variable)
+  const ModEvent ME_GRAPH_VAL   = ME_GEN_ASSIGNED;
+
+  /**
+   * \brief Domain operation has changed the least upper bound 
+   *
+   * Note that this implies that the domain has not resulted in a value
+   * and that also neither cardinality nor the greatest lower bound
+   * have changed.
+   */
+  const ModEvent ME_GRAPH_LUB  = ME_GRAPH_VAL + 1;
+  /**
+   * \brief Domain operation has changed the greatest lower bound
+   *
+   * Note that this implies that the domain has not resulted in a value
+   * and that also neither cardinality nor the least upper bound
+   * have changed.
+   */
+  const ModEvent ME_GRAPH_GLB   = ME_GRAPH_LUB + 1;
+  /**
+   * \brief Domain operation has changed both greatest lower and least
+   * upper bound
+   *
+   * Note that this implies that the domain has not resulted in a value
+   * and that also the cardinality has not changed.
+   */
+  const ModEvent ME_GRAPH_BB    = ME_GRAPH_GLB + 1;
+
+
+
+  /**
+   * \brief Propagate when a view becomes assigned (single value)
+   *
+   * If a propagator \a p depends on a view \a x with propagation
+   * condition PC_GRAPH_VAL, then \a p is propagated when a domain
+   * update operation on \a x returns the modification event ME_GRAPH_VAL.
+   */
+  const PropCond PC_GRAPH_VAL  = PC_GEN_ASSIGNED;
+  /**
+   * \brief Propagate when the greatest lower bound of a view changes
+   *
+   * If a propagator \a p depends on a view \a x with propagation
+   * condition PC_GRAPH_GLB, then \a p is propagated when a domain
+   * update operation on \a x returns the modification event ME_GRAPH_VAL or 
+   * ME_GRAPH_GLB.
+   */
+  const PropCond PC_GRAPH_GLB  = PC_GRAPH_VAL + 1;
+  /**
+   * \brief Propagate when the least upper bound of a view changes
+   *
+   * If a propagator \a p depends on a view \a x with propagation
+   * condition PC_GRAPH_LUB, then \a p is propagated when a domain
+   * update operation on \a x returns the modification event ME_GRAPH_VAL or
+   * ME_GRAPH_LUB.
+   */
+  const PropCond PC_GRAPH_LUB  = PC_GRAPH_GLB + 1;
+  /**
+   * \brief Propagate when any bound of a view changes
+   *
+   * If a propagator \a p depends on a view \a x with propagation
+   * condition PC_GRAPH_ANY, then \a p is propagated when a domain
+   * update operation on \a x returns any modification event but ME_GRAPH_FAILED and
+   * ME_GRAPH_NONE.
+   */
+  const PropCond PC_GRAPH_ANY = PC_GRAPH_LUB + 1;
+  //@}
+  } }
+
+// STATISTICS: graph-var

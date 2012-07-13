@@ -1,0 +1,21 @@
+Autores:
+David Przybilla
+Jose Pulido
+
+cpgraph: en esta carpeta encontrara el codigo fuente de cpgraph modificado sin y con advisores.
+            cpgraph_conAdvisores.tar.gz : es la version modificada en esta tesis que contiene advisores.
+	    cpgraph_sinAdvisores.tar.gz : es la version modificada en esta tesis que no contiene advisores
+ 	
+	   Al descomprimir los codigos fuentes, encontrara la documentacion del framework en la carpeta "misc/doxygen/html"
+
+
+pruebas: en esta carpeta encontrara la documentacion y el codigo fuente de las diferentes pruebas realizadas.
+
+guiaDeUsoCP(Graph).pdf: es una guia:
+ *de instalacion de cpgraph
+ *de instalacion de las pruebas
+ *de uso de cpgraph en sus propios programas
+
+documentoTesis.pdf: es el documento pertinente al trabajo de grado. Que explica el trabajo realizado, los objetivos planteados y las concluciones.
+
+

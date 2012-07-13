@@ -1,0 +1,1524 @@
+#LyX 1.5.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass book
+\begin_preamble
+\setcounter{section}{2}
+\usepackage{color}
+\usepackage{alltt}
+\usepackage{mdwlist}
+\end_preamble
+\language spanish
+\inputencoding auto
+\font_roman lmodern
+\font_sans default
+\font_typewriter default
+\font_default_family rmdefault
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\paperfontsize default
+\spacing single
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\leftmargin 3cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 2cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Identificación y Análisis del Problema
+\end_layout
+
+\begin_layout Standard
+El objetivo de éste capítulo es presentar:
+\end_layout
+
+\begin_layout Enumerate
+Los aspectos clave de Gecode que permitan entender los cambios realizados
+ a CP(Graph) original.
+\end_layout
+
+\begin_layout Enumerate
+Los cambios que tuvo Gecode que afectan el funcionamiento de CP(Graph) original
+ en Gecode 2.1.1.
+\end_layout
+
+\begin_layout Standard
+Para cumplir con el primer objetivo se hizo:
+\end_layout
+
+\begin_layout Itemize
+Se aprendió sobre los diferentes componentes de Gecode los cuales se usan
+ en CP(Graph) original,  para esto se hicieron experimentos,  se consulto
+ en la lista de Gecode,  se revisaron los ejemplos que vienen con Gecode
+ 2.1.1 entre otras tareas.
+\end_layout
+
+\begin_layout Standard
+Para cumplir con el segundo objetivo se uso:
+\end_layout
+
+\begin_layout Itemize
+El registro de cambios entre versiones de Gecode
+\begin_inset LatexCommand cite
+key "key-52"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+La documentación de Gecode 1.0 y Gecode 2.1.1.
+\end_layout
+
+\begin_layout Itemize
+El Compilador de GNU.
+\end_layout
+
+\begin_layout Itemize
+El GDB para rastrear problemas de segmentación y problemas en tiempo de
+ ejecución.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+
+\lang english
+esto estaba antes: El objetivo de este capítulo es presentar tanto las modificac
+iones hechas a CP(Graph) como un marco de conocimiento que permita entender
+ el contexto de los cambios y por ende la razón por la que se realizaron,
+  para esto se explicara la arquitectura de Gecode 2.1.1 y como funcionan
+ algunos de sus elementos más importantes como propagadores,  vistas, iteradores
+ y estrategia de distribución(branching,  en inglés).
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Gecode
+\end_layout
+
+\begin_layout Standard
+El ambiente de programación de restricciones Gecode fue diseñado utilizando
+ el paradigma orientado a objetos,  el modelo de propagación utilizado por
+ Gecode es centrado en los propagadores,  en éste modelo los propagadores
+ son planificados y ejecutados,  una desventaja del anterior modelo radica
+ en que tiene un costo alto mantener información completa sobre los cambios
+ hechos en el dominio de las variables modificadas, por el contrario,  otros
+ sistemas de restricciones utilizan un modelo propagación centrado en las
+ variables,  en éste la propagación se basa en planificar las variables
+ modificadas, donde el costo de almacenar  información completa de las modificac
+iones hechas al dominio de las variables es bajo.
+\end_layout
+
+\begin_layout Standard
+Una vista gráfica general Gecode 2.1.1 es proporcionada en 
+\begin_inset LatexCommand cite
+key "key-10"
+
+\end_inset
+
+,  la siguiente es la lista completa de tareas que se pueden realizar en
+ Gecode 2.1.1,  adicionalmente aquellas que fue necesario entender y aplicar
+ están señaladas con un asterisco:
+\end_layout
+
+\begin_layout Itemize
+Programación de modelos(*).
+\end_layout
+
+\begin_layout Itemize
+Programación de motores de búsqueda.
+\end_layout
+
+\begin_layout Itemize
+Programación de propagadores y estrategias de distribución(*).
+\end_layout
+
+\begin_layout Itemize
+Programación de variables.
+\end_layout
+
+\begin_layout Itemize
+Programación de vistas(*).
+\end_layout
+
+\begin_layout Itemize
+Pruebas.
+\end_layout
+
+\begin_layout Itemize
+Reflexión y serialización.
+\end_layout
+
+\begin_layout Standard
+Dependiendo de la tarea que se desee realizar en Gecode se trabaja con un
+ componente distinto, en la siguiente lista están los componentes principales
+ de Gecode 2.1.1, adicionalmente los componentes manejados en CP(Graph) se
+ distinguen con un asterisco:
+\end_layout
+
+\begin_layout Enumerate
+Modelos y variables.
+\end_layout
+
+\begin_layout Enumerate
+Vista(*) e implementación de variable(*).
+\end_layout
+
+\begin_layout Enumerate
+Motor de búsqueda(*) y espacio(*).
+\end_layout
+
+\begin_layout Enumerate
+Propagador(*),  condición de propagación(*) y evento de modificación(*).
+\end_layout
+
+\begin_layout Enumerate
+Estrategia de distribución(branching)(*).
+\end_layout
+
+\begin_layout Enumerate
+Iterador(*)
+\newpage
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Standard
+
+
+\backslash
+setcounter{enumi}{0}
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+A continuación se explican los componentes que hacen parte de CP(Graph):
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Modelos y variables
+\end_layout
+
+\begin_layout Standard
+La programación de un en CSP en Gecode 2.1.1 va de la mano de la utilización
+ de objetos variable.
+ Las variables son clases disponibles al usuario final para que lleve a
+ cabo el modelamiento del problema.
+\end_layout
+
+\begin_layout Standard
+Si se desea programar un CSP en Gecode 2.1.1 se debe hacer:
+\end_layout
+
+\begin_layout Itemize
+Crear una clase para modelar el problema la cual debe de extender de la
+ clase Space de Gecode.
+\end_layout
+
+\begin_layout Itemize
+Declarar las variables (los objetos variables permiten declarar un dominio
+ inicial,  fijas restricciones sobre éstas y consultar el estado de su dominio)
+ del CSP y su respectivo dominio.
+\end_layout
+
+\begin_layout Itemize
+Especificar las restricciones y relaciones entre las variables declaradas
+ en el punto anterior
+\end_layout
+
+\begin_layout Itemize
+Especificar la estrategia de distribución que desea aplicar para la solución
+ del problema.
+ 
+\end_layout
+
+\begin_layout Itemize
+Definir un constructor de copia (Gecode 2.1.1 explora bajo copying) 
+\end_layout
+
+\begin_layout Itemize
+Crear una instancia de la clase Options de Gecode 2.1.1 e indicar cuantas
+ iteraciones desea realizar en el proceso de búsqueda u otras opciones de
+ configuración pertinentes al problema
+\end_layout
+
+\begin_layout Itemize
+Crear una instancia de la clase que modela el problema.
+ 
+\end_layout
+
+\begin_layout Itemize
+Llamar el método doSearch() de la instancia anteriormente creada.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+2.
+ Vistas e implementación de variable
+\end_layout
+
+\begin_layout Standard
+Las vistas a diferencia de las variables,  son clases no disponibles directament
+e al usuario final que modela problemas de restricciones,  si no a las personas
+ que se encargan de implementar nuevas variables y dominios en Gecode.
+ Las vistas e implementaciones de variable describen la funcionalidad interna
+ de una variable que usa el usuario.
+ La variable no implementa métodos,  es simplemente una interfaz que esconde
+ al usuario final métodos que le permitirían manipular directamente el dominio
+ de una variable.
+ El siguiente gráfico  presenta una vista general de como encajan las vistas,
+  variables e implementación de variables en Gecode 2.1.1:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\align center
+
+\lang english
+\begin_inset Graphics
+	filename graphics/vistasyvar.png
+	scale 50
+
+\end_inset
+
+
+\lang spanish
+
+\begin_inset Caption
+
+\begin_layout Standard
+Vistas y Variables en Gecode 
+\begin_inset LatexCommand cite
+key "key-13"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Para llevar a cabo el corte del dominio de una variable,  el propagador
+ tiene dos opciones que son o usar un objeto implementación de variable
+ de aquí en adelante llamado varimp o un objeto vista de aquí en adelante
+ llamado vista.
+\end_layout
+
+\begin_layout Standard
+Un varimp proporciona métodos para consultar y actualizar el dominio de
+ una variable, una vista tiene una referencia a una varimp pero adicionalmente
+ proporciona métodos para transformar la entrada del propagador (el dominio
+ de la variable) y para transformar la salida que éste genera.
+\end_layout
+
+\begin_layout Standard
+Si por ejemplo se implementara un propagador para la restricción
+\newline
+ 
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+Esta parte esta muy especifica.
+ Me parece que se pueden omitir algunos detalles.
+\end_layout
+
+\end_inset
+
+
+\begin_inset Formula $\left[Max\left\{ x_{1},.....,x_{n}\right\} =y\right]$
+\end_inset
+
+,  y se deseara implementar también otro propagador para la restricción
+ 
+\begin_inset Formula $\left[Min\left\{ x_{1},......,x_{n}\right\} \right]$
+\end_inset
+
+,  usando varimp habría que tener dos propagadores, cada uno con una referencia
+ a una varimp distinta,  ésto dado el ligero cambio en la restricción el
+ cual genera un cambio en los tells que maneja cada varimp,  pero estas
+ 2 restricciones están relacionadas por la equivalencia:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\left[Min\left\{ x_{1},......,x_{n}\right\} \right]$
+\end_inset
+
+ =
+\begin_inset Formula $\left[Max\left\{ -x_{1},.....,-x_{n}\right\} =-y\right]$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Para resolver éste problema de redundancia de código,  se introdujeron las
+ vistas,  la idea es que las vistas adecúen la entrada y salida para el
+ propagador.El problema anterior visto desde el enfoque de las vistas se
+ podría resolver usando un clase propagadorA que recibe al ser instanciada
+ una referencia a una vista A para la restricción Max y un clase propagadorA
+ que recibe al ser instanciada una referencia a una vista B la cual adecúa
+ la entrada y salida para éste,  este propagador se denomina derivado, 
+ a nivel de programación esto se logra usando lo que se denomina parametricidad.L
+a abstracción de parametricidad a través de tipos permite que el mismo código
+ pueda ser instanciado con diferentes parámetros de tipos compatibles (el
+ mismo propagador sera instanciado con distintas vistas).
+\newline
+
+\end_layout
+
+\begin_layout Standard
+En gecode existen variables como IntVar, SetVar y de forma equivalente existen
+ IntView,  SetView.
+ 
+\end_layout
+
+\begin_layout Standard
+IntVar, SetVar están disponibles a los usuarios para el modelamiento,  mientras
+ las segundas (IntView,  SetView) están disponibles a los desarrolladores
+ en Gecode.
+\end_layout
+
+\begin_layout Standard
+El cuerpo de una vista esta compuesto de:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Métodos de acceso:
+\series default
+ permiten ver el estado del dominio actual,  permiten iterar sobre los valores
+ del mismo y responder inquietudes sobre valores del dominio e.g Métodos
+ para acceder el máximo valor del dominio,  el tamaño del dominio,  la distancia
+ entre el valor más pequeño del dominio y el más grande del dominio.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Pruebas de dominio
+\series default
+: métodos que retornan bool y que normalmente es el resultado de alguna
+ búsqueda,  e.g probar si un numero se encuentra dentro del dominio
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Tells
+\series default
+: permiten modificar el dominio actual de una Variable y retornan siempre
+ un ModEvent.
+ e.g métodos para restringir que el dominio sea menor o igual a un numero
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Tells con iteradores
+\series default
+: tienen la misma funcion que los anteriores Tell,  solo que el recorte
+ de dominio se realiza con un iterador,  el cual tiene una funcion interna
+ que evalúa cada valor del dominio evaluando si el valor es parte o no del
+ dominio.
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+3.
+\series bold
+Motores de búsqueda y espacio
+\end_layout
+
+\begin_layout Standard
+El encargado de encontrar las soluciones a un CSP en Gecode es el motor
+ de búsqueda,  éste tiene 2 tareas que son: encontrar todas las soluciones
+ al CSP y garantizar la correctitud de estas soluciones,  para esto el motor
+ de búsqueda utiliza dos técnicas que son la búsqueda y la inferencia, 
+ la búsqueda (implementada con 
+\emph on
+la estrategia de distribución
+\emph default
+) asegura encontrar todas las soluciones al CSP,  la inferencia (implementada
+ con 
+\emph on
+propagadores
+\emph default
+) asegura que cada solución cumpla las restricciones del CSP.
+\end_layout
+
+\begin_layout Standard
+Durante la búsqueda de las soluciones a un CSP el motor de búsqueda genera
+ un árbol de búsqueda,  un nodo en el árbol de búsqueda representa un punto
+ fijo (una foto del sistema en ejecución) calculado por la propagación,
+  este punto fijo se denomina un espacio.Cada espacio se caracteriza por
+ tener:
+\end_layout
+
+\begin_layout Itemize
+Cola de propagadores: indica cuales propagadores deben ser corridos.
+\end_layout
+
+\begin_layout Itemize
+Cola de estrategias de búsqueda .
+\end_layout
+
+\begin_layout Itemize
+Dominios de variables.
+\end_layout
+
+\begin_layout Itemize
+SpaceStatus.
+\end_layout
+
+\begin_layout Standard
+El SpaceStatus de un espacio representa el estado del espacio actual,  el
+ cual puede ser: una solución al CSP,  no ser una solución al CSP (por ejemplo
+ una variable es vacía) o puede contener variables no asignadas (en el caso
+ de variables enteras,  variables con más de un valor),  a nivel de implementaci
+ón esto es:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+SS_SOLVED
+\series default
+: Ningún propagador retorno ES_FAILED y ninguna distribución es permitida.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+SS_FAILED
+\series default
+: Un propagador retornado es fallido.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+SS_BRANCHED
+\series default
+: haga distribución,  ya que las variables no están asignadas y el propagador
+ no retorno falla así que pueden haber soluciones al CSP.
+\end_layout
+
+\begin_layout Standard
+Algo importante sobre un espacio es que al tomar su estado SS_FAILED,  se
+ requiere restaurar éste a el estado anterior para continuar con la búsqueda,
+  para esto se utilizan los métodos:
+\end_layout
+
+\begin_layout Itemize
+status()
+\end_layout
+
+\begin_layout Itemize
+clone(share)
+\end_layout
+
+\begin_layout Itemize
+commit(desc, a)
+\end_layout
+
+\begin_layout Standard
+Para profundizar en como Gecode utiliza un espacio se puede consultar 
+\begin_inset LatexCommand cite
+key "key-11"
+
+\end_inset
+
+.
+\newline
+
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+
+\series bold
+\InsetSpace ~
+4.Propagador,  condición de propagación y evento de modificación
+\newline
+
+\end_layout
+
+\begin_layout Standard
+Un propagador es una abstracción la cual brinda la implementacion de una
+ restricción,  un propagador a nivel conceptual esta representado por unas
+ reglas de filtrado,  estas reglas de filtrado reflejan la forma en que
+ el propagador va a podar los dominios de las variables y deben garantizar
+ la correctitud del propagador,  es decir,  que genera las soluciones correctas
+ a la restricción.En Gecode se pueden implementar nuevos propagadores que
+ apliquen a las variables por defecto de Gecode,  pero también para variables
+ "nuevas
+\begin_inset Quotes erd
+\end_inset
+
+,  creadas a partir de las variables por defecto de Gecode.Cada propagador
+ retorna un Status que indica al estado actual que ocurrió durante la propagació
+n.
+\newline
+
+\end_layout
+
+\begin_layout Standard
+Desde el punto de vista del número de restricciones que toman los propagadores,
+  los propagadores que Gecode proporciona se pueden clasificar en:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+UnaryPropagators
+\series default
+: Se refieren a restricciones de una sola variable,  e.g Sea X una variable
+ entera,  la restricción X>3 es una restricción unaria pues implica una
+ sola variable de restricciones.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+BinaryPropagators
+\series default
+: Se refieren a restricciones que involucran dos variables e.g: X && Y=0
+ donde X, Y son variables del dominio de los booleanos
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+TernaryPropagators
+\series default
+: Se refieren a restricciones que involucran tres variables e.g: X && Y=Z
+ donde,  X, Y, Z son variables del dominio de los booleanos
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+NaryPropagators
+\series default
+: Se refieren a restricciones que involucran arreglos de variables e.g la
+ restricción lineal típica,  expresada de la forma A+B+C=T donde T es una
+ constante entera A, B, C son variables de restricciones Enteras en este
+ caso,  gecode podría tomar las variables A, B, C como un array de IntVars
+ y el propagador recibiría el array de IntVar como la variable de entrada
+ al propagador.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+NaryOnePropagators
+\series default
+: Se refieren a restricciones que involucran un array de variables y una
+ variable de restricciones,  por ejemplo,  la restricción lineal típica,
+  expresada de la forma A+B+C=T donde T es una variable entera de restricciones
+ y donde A, B, C son variables de restricciones enteras,  en este caso,
+  Gecode podría tomar las variables A, B, C como un array de IntVars y el
+ propagador recibiría el array de IntVar como la variable de entrada al
+ propagador y una variable entera de restricciones T.
+\end_layout
+
+\begin_layout Standard
+Teniendo lo anterior claro,  se tiene en Gecode para los diferentes tipos
+ de propagadores mencionados clases de las cuales podemos extender (Heredar)
+ de acuerdo al propagador que tengamos intención de implementar.
+ Se debe tener en cuenta que todos los propagadores heredan de la clase
+ Propagator.
+ 
+\end_layout
+
+\begin_layout Standard
+Un propagador P depende de una vista X (Variable sobre la cual aplica la
+ restriccion) con una 
+\emph on
+Condición De Propagación
+\emph default
+ P y es llamado (encolado para su ejecución) cuando una actualización de
+ dominio sobre X retorne un evento de modificación que sea el evento que
+ encaja en la Condición de Propagación.
+ Las siguientes son las Condiciones de Propagación que Gecode incluye por
+ defecto:
+\end_layout
+
+\begin_layout Itemize
+
+\shape italic
+PC_INT_VAL
+\shape default
+ Indica que el propagador sera corrido cuando se realicen asignaciones de
+ valor
+\end_layout
+
+\begin_layout Itemize
+
+\shape italic
+PC_INT_BND
+\shape default
+ Indica que el propagador sera corrido cuando se realicen cambios sobre
+ las cotas superiores e inferiores de la variable.
+\end_layout
+
+\begin_layout Itemize
+
+\shape italic
+PC_INT_DOM 
+\shape default
+Indica que el propagador sera corrido cuando se realicen cambios de cualquier
+ tipo sobre la variable.
+\end_layout
+
+\begin_layout Standard
+Durante la aplicación de las reglas de podado de dominio dentro del propagador,
+  se le tendrá que decir a una variable que asigne su cota superior a un
+ determinado valor o que su cota inferior sea modificado a un valor determinado,
+ estas funciones que modifican el dominio de una variable se llaman "Tells"
+ dentro de la jerga de Gecode.
+ Como regla en Gecode,  siempre que se haga un llamado a un Tell se tendrá
+ que revisar si el Tell ha retornado un valor diferente de fallo,  para
+ que en caso de fallo gecode se encargue de determinar que el problema no
+ tiene solución.
+ Los propagadores manejan el failure (cuando el dominio de una variable
+ es vació) y controlan la propagación [1].
+\newline
+
+\end_layout
+
+\begin_layout Standard
+Un Propagador puede retornar:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+ES_FAILED
+\series default
+: Indica que el propagador ha fallado y que el espacio debe por tanto fallar
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+ES_SUBSUMED
+\series default
+: Indica que el propagador no realizara más cambios al dominio durante el
+ resto del CSP y por tanto el objeto puede ser destruido.
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+ES_FIX
+\series default
+: Indica que en el Espacio actual correr el propagador nuevamente no realizara
+ ninguna poda en el dominio de las variables
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+ES_NOFIX
+\series default
+: Indica que el propagador no ha alcanzado un punto fijo y que en caso de
+ que su PC se cumpla,  entonces debe ser encolado nuevamente.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+5
+\series default
+.
+\series bold
+Iterador
+\series default
+
+\newline
+
+\end_layout
+
+\begin_layout Standard
+Un iterador proporciona acceso a los elementos de una colección en un orden
+ secuencial,  uno al tiempo
+\begin_inset LatexCommand cite
+key "key-17"
+
+\end_inset
+
+.En Gecode existen dos iteradores los cuales permiten acceder los elementos
+ de el dominio de una variable,  el iterador de valor permite acceder elemento
+ por elemento del dominio de la variable y el iterador de rango que permite
+ acceder una secuencia de rangos obtenida del dominio de la variable,  por
+ ejemplo para el conjunto de valores enteros 
+\begin_inset Formula $s=\left\{ 1,2,4,5,7\right\} $
+\end_inset
+
+ el iterador de valor permitiría acceder a 1, 2, 4, 5, 7 pero el iterador
+ de rango permitirá acceder a los rangos,  es decir,  <
+\begin_inset Formula $\left[1,2\right]\left[4,5\right]$
+\end_inset
+
+
+\begin_inset Formula $\left[7\right]$
+\end_inset
+
+>,  en este caso son 3 rangos y el iterador de rango avanzara sobre cada
+ rango y solo permite hallar el mayor y menor de cada rango más no iterar
+ sobre cada elemento dentro del rango.
+\end_layout
+
+\begin_layout Standard
+Algunas veces se requiere de que un Tell haga por ejemplo un recorte de
+ dominio sobre más de un valor,  se requiere incluir varios valores dentro
+ del dominio de la variable,  o se requiere de métodos de acceso al dominio
+ que devuelven mas de un valor,  en estos casos se usan los iteradores para
+ almacenar esos valores del dominio o para realizar un Tell precisamente
+ sobre esos valores del dominio.
+ 
+\newline
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+6
+\series default
+.
+\series bold
+Estrategias de distribución 
+\series default
+
+\newline
+
+\end_layout
+
+\begin_layout Standard
+La estrategia de distribución hace parte de la búsqueda de la solución a
+ un CSP,  ésta determina la forma la forma del árbol de búsqueda escogiendo
+ la próxima variable y valor.
+\end_layout
+
+\begin_layout Standard
+La búsqueda de la solución comienza con los propagadores,  una vez los propagado
+res han alcanzado un punto fijo,  el proceso de distribución comienza.En
+ este punto existen tres posibilidades:
+\end_layout
+
+\begin_layout Itemize
+Todas las variables del CSP están asignadas.En este caso la búsqueda se detiene
+ ya que una solución se ha obtenido.
+\end_layout
+
+\begin_layout Itemize
+Existen variables que todavía no están asignadas.En este caso,  se realiza
+ un nuevo paso de distribución.Un paso de distribución consiste de:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+Seleccionar próxima variable a explorar.
+\end_layout
+
+\begin_layout Enumerate
+Seleccionar el valor (alternativa) de la variable escogida.
+ 
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+Una vez esta selección se ha hecho,  se agrega la correspondiente restricción
+ al almacén (store).Esta adición de restricción posiblemente active algunos
+ propagadores,  así que se debe esperar hasta que todos los propagadores
+ queden fijos para realizar una nueva iteración de distribución.
+\end_layout
+
+\begin_layout Standard
+Si hay al menos una variable cuyo dominio es vació,  en este caso,  se vuelve
+ al estado anterior,  y se prueba una alternativa distinta esperando por
+ la estabilización de los propagadores (que alcancen un punto fijo).
+\end_layout
+
+\begin_layout Section
+Cambios Detectados 
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+
+\lang english
+Cambie el titulo 
+\begin_inset Quotes eld
+\end_inset
+
+cambios detectados a nivel general
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+En esta sección se mencionan los cambios detectados entre Gecode 1.0.0 y Gecode
+ 2.1.1 que hacen que CP(Graph) no funcione en Gecode 2.1.1.
+\end_layout
+
+\begin_layout Subsection
+Algoritmo de Propagación.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+Aquí debería incluirse la imagen de el algoritmo de la propagación orientada
+ a variables y el algoritmo del orientado a propagadores
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Como se ha mencionado en las secciones anteriores existen dos tipos de 
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+propagación
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+,  propagación orientada en propagadores y propagación orientada en las
+ variables.
+\newline
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Propagación Orientada en los propagadores
+\newline
+
+\end_layout
+
+\begin_layout Standard
+El algoritmo de propagación de Gecode es orientado en los propagadores,
+  lo que significa que los propagadores que aun no han alcanzado un punto
+ fijo son encolados para su ejecución en cada espacio.
+\newline
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Propagación Orientada en las variables
+\newline
+
+\end_layout
+
+\begin_layout Standard
+La propagación orientada  en las variables,  no tiene una cola de los propagador
+es,  si no de las variables cuyo dominio ha sido modificado,  durante cada
+ ejecución se correrán aquellos propagadores que están subscritos a esas
+ variables.
+\end_layout
+
+\begin_layout Standard
+La propagación orientada a las variables tiene ventajas sobre la propagación
+ orientada en propagadores pues durante la propagación se puede saber exactament
+e que variable fue la que invoco el propagador,  y además se puede saber
+ cual fue el cambio en el dominio de esa variable.
+ Esto permite hacer que el propagador cada vez que realiza su propagación
+ no empiece a calcular desde cero (
+\shape italic
+Propagación Incremental
+\shape default
+).
+\end_layout
+
+\begin_layout Standard
+e.g: Supóngase que se tiene un propagador: 
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Formula $z=\underset{}{\overset{k}{\underset{i=1}{\sum}x_{i}}}$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+En propagación orientada a las variables,  cada vez que el propagador sea
+ ejecutado,  sabría exactamente cual variable 
+\begin_inset Formula $x_{l}$
+\end_inset
+
+ cambio y cual fue cambio en el dominio de la variable de 
+\begin_inset Formula $x_{l}$
+\end_inset
+
+.
+ Normalmente en este propagador el valor de la banda inferior de Z es la
+ suma de las bandas inferiores de cada 
+\begin_inset Formula $x_{i}$
+\end_inset
+
+,  en este caso para saber el nuevo valor de la banda inferior de Z solo
+ se tendría que hacer la diferencia entre el dominio nuevo y antiguo dominio
+ de 
+\begin_inset Formula $x_{l}$
+\end_inset
+
+.
+ 
+\newline
+
+\newline
+En Gecode 2.0, se agrego un nuevo componente llamado 
+\shape italic
+Advisor 
+\shape default
+para permitir a la propagación orientada a los propagadores realizar propagación
+ Incremental.
+ Este cambio introdujo algunas modificaciones al algoritmo de ejecución
+ de Gecode.
+\begin_inset LatexCommand cite
+key "key-1"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+El cambio del algoritmo de propagación tuvo impacto en la forma como se
+ programan los Propagadores y las Views.
+\newline
+
+\end_layout
+
+\begin_layout Subsubsection*
+Algoritmo de Propagación Gecode 1.0
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float algorithm
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graphics/algoritmoGecode1.jpg
+	scale 40
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
+Algoritmo de Propagación Centrado en los Propagadores (Gecode 1)
+\begin_inset LatexCommand cite
+key "key-1"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $P$
+\end_inset
+
+ es una cola donde se encuentran los propagadores que deben ser corridos,
+ 
+\begin_inset Formula $S$
+\end_inset
+
+ es un store donde se almacenan las variables y sus dominios.
+ El algoritmo consiste de un ciclo que se mantiene mientras existan propagadores
+ en la cola.
+ Cada propagador 
+\begin_inset Formula $p$
+\end_inset
+
+ dentro de 
+\begin_inset Formula $P$
+\end_inset
+
+ tiene un estado representado por la instrucción 
+\begin_inset Formula $state[p]$
+\end_inset
+
+,  además cada propagador recibe un dominio y un estado,  devolviendo:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $l$
+\end_inset
+
+,  un listado de los tells (cambios de dominio) que el propagador ordena
+ hacer.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $q$
+\end_inset
+
+, un nuevo estado,  arrojado después de la propagación.
+\end_layout
+
+\begin_layout Standard
+El comando 
+\begin_inset Formula $prop[x]$
+\end_inset
+
+ devuelve los propagadores subscritos a la variable 
+\begin_inset Formula $x$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Luego de propagar,  se explora el listado de tells,  y se ejecuta cada tell,
+  lo que da como resultado un nuevo Store 
+\begin_inset Formula $s$
+\end_inset
+
+,  y por cada variable 
+\begin_inset Formula $x$
+\end_inset
+
+ cuyo dominio haya sido modificado,  se agregaran a la cola aquellos propagadore
+s que estén subscritos a la variable 
+\begin_inset Formula $x$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsubsection*
+Algoritmo de Propagación Gecode 2.1.1
+\end_layout
+
+\begin_layout Standard
+El algoritmo de propagación de Gecode 2.1.1 Introduce los Advisores.
+\end_layout
+
+\begin_layout Standard
+Un Advisor es una funcion que esta relacionado con un propagador,  el Advisor
+ recibe que variable en particular ha cambiado y el cambio del dominio sobre
+ esa variable en particular,  según esta información el advisor puede hacer
+ dos cosas:
+\end_layout
+
+\begin_layout Itemize
+Indicarle al propagador si debe correr o no debe correr.
+\end_layout
+
+\begin_layout Itemize
+Cambiar el estado del propagador para indicarle al propagador como debe
+ propagar y de esta forma propagar más eficientemente.
+ 
+\end_layout
+
+\begin_layout Standard
+Un Advisor 
+\begin_inset Formula $a$
+\end_inset
+
+ se define como una funcion que tiene como entrada un store 
+\begin_inset Formula $s$
+\end_inset
+
+,  un estado 
+\begin_inset Formula $q$
+\end_inset
+
+ y un tell 
+\begin_inset Formula $t$
+\end_inset
+
+ y retorna una pareja 
+\begin_inset Formula $a(s,q,t)=<\sigma',Q>$
+\end_inset
+
+donde 
+\begin_inset Formula $\sigma'$
+\end_inset
+
+es un estado y 
+\begin_inset Formula $Q$
+\end_inset
+
+ es un conjunto de propagadores.
+ Un advisor da concejo a un solo propagador denominado 
+\begin_inset Formula $prop[a]$
+\end_inset
+
+
+\begin_inset LatexCommand cite
+key "key-1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+La idea detrás de los Advisores radica en que es una funcion simple y que
+ dentro de esta funcion no se intentara propagar(hacer tells).
+ En caso de indicar que no se debe propagar el conjunto seria equivalente
+ a 
+\begin_inset Formula $Q=\emptyset$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Un advisor 
+\begin_inset Formula $a$
+\end_inset
+
+ depende de una y una sola variable denominada 
+\begin_inset Formula $var(a)$
+\end_inset
+
+,  por tanto el advisor 
+\begin_inset Formula $a$
+\end_inset
+
+ sera ejecutado solamente cuando la variable de la que depende fue modificada.
+ el comando 
+\begin_inset Formula $adv[x]$
+\end_inset
+
+denomina la lista de Advisores que depende de la variable 
+\begin_inset Formula $x$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Teniendo en cuenta lo anterior el algoritmo propuesto para la propagación
+ con advisores es el siguiente:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float algorithm
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graphics/algoritmoGecode2.jpg
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Standard
+Algoritmo de Propagación Centrado en los Propagadores con Advisores (Gecode
+ 2.1.1)
+\begin_inset LatexCommand cite
+key "key-1"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+El algoritmo en general es el mismo,  excepto en el ultimo segmento,  en
+ donde por cada variable cuyo dominio ha sido modificado se explorara su
+ lista de Advisores,  llamándose a cada advisor,  esto cambiara internamente
+ los estados de los propagadores y determinara cuales propagadores deben
+ encolarse.
+ 
+\end_layout
+
+\begin_layout Standard
+El cambio en el algoritmo de propagación tiene como consecuencia:
+\end_layout
+
+\begin_layout Itemize
+Nuevos elementos a nivel de implementacion Objetos Deltas,  Advisores, 
+ Councils.
+\end_layout
+
+\begin_layout Itemize
+Cambio de responsabilidades de algunas tareas.
+\end_layout
+
+\begin_layout Subsection
+Propagadores 
+\end_layout
+
+\begin_layout Itemize
+Los propagadores ahora son encargados de terminar la subscripción de las
+ variables que depende de ellos.
+\end_layout
+
+\begin_layout Itemize
+Los propagadores tienen nuevas PC (condiciones de propagación,  PropagationCondi
+tions en inglés).
+\end_layout
+
+\begin_layout Itemize
+La función Propagate recibe nuevos parámetros (Deltas),  los objetos delta
+ permiten en el método de la propagación saber que tipo de cambio activo
+ la PC (sobre quien se realizo el cambio de manera general.
+ e.g la banda inferior o superior)
+\end_layout
+
+\begin_layout Itemize
+Los propagadores son encargados de implementar la funcion advise en caso
+ de que se quiera usar los advisores
+\end_layout
+
+\begin_layout Itemize
+Cambiaron la definición de algunas constantes de Gecode
+\end_layout
+
+\begin_layout Itemize
+Algunas restricciones sobre los booleanos disponibles en Gecode 1,  no están
+ en Gecode 2,  sin embargo restricciones equivalentes son expresables.
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+aquí se podría marcar un anexo donde se marquen los cambios a nivel de implement
+acion mas detalladamente.
+ Al momento no se si es prudente incluirlos o no.
+ por el momento los dejare de lado
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Variables 
+\end_layout
+
+\begin_layout Standard
+En Gecode 1 las Variables BoolVar e IntVar dependían de la misma VarImp,
+  esto quiere decir que dentro del kernel las variables booleanas eran manejadas
+ como variables enteras cuyo dominio estaba entre 0 y 1.
+ Esto permitía imponer restricciones de enteros sobre variables Booleanas
+ y restricciones Booleanas sobre variables Enteras.
+ 
+\end_layout
+
+\begin_layout Standard
+En Gecode 2.1.1 las BoolVar tienen su propia VarImp lo que no permite imponer
+ restricciones de Enteros sobre las BoolVar,  e igualmente no permite imponer
+ restricciones booleanas sobre variables Enteras.
+ 
+\end_layout
+
+\begin_layout Subsection
+Distribución
+\end_layout
+
+\begin_layout Itemize
+Las constantes para elegir las variables de distribución cambiaron de identifica
+dor.
+\end_layout
+
+\begin_layout Subsection
+Otros Problemas Encontrados
+\end_layout
+
+\begin_layout Standard
+A continuación se enumeran otros problemas encontrados durante la etapa
+ de análisis del problema.
+\end_layout
+
+\begin_layout Standard
+Durante esta etapa se concluyo que:
+\end_layout
+
+\begin_layout Itemize
+La implementacion de CP(Graph) no contiene todos los propagadores y/o vistas
+ expresados en la tesis de Gregoire Dooms
+\end_layout
+
+\begin_layout Itemize
+Los usuarios de CP(Graph) realizan el modelamiento directamente sobre objetos
+ que no tienen encapsulados los métodos que permiten realizar los tells.
+\end_layout
+
+\begin_layout Itemize
+El propagador de PathDegree esta incompleto para la vista 
+\shape italic
+NodeArcSetsGraphView
+\shape default
+,  lo que al mismo tiempo hace que la restriccion de Path no funcione correctame
+nte para todos las instancias, dado que la restriccion de Path internamente
+ esta basada en la restriccion de PathDegreee.
+ Sin embargo PahtDegree funciona correctamente para la vista 
+\shape italic
+OutAdjSetsGraphView.
+\end_layout
+
+\begin_layout Itemize
+Se encontró otra versión de CP(Graph) con más propagadores en 
+\begin_inset LatexCommand cite
+key "key-18"
+
+\end_inset
+
+,  sin embargo al no coincidir con la versión del repositorio Oficial, 
+ ni tener documentación de ayuda,  además de tener un código fuente desordenado
+ se descarto el trabajar sobre esta versión.
+ Este trabajo de grado y las modificaciones hechas se hicieron sobre la
+ versión encontrada en 
+\begin_inset LatexCommand cite
+key "key-16"
+
+\end_inset
+
+.
+ Sin embargo,  se usaron algunos aportes encontrados en 
+\begin_inset LatexCommand cite
+key "key-18"
+
+\end_inset
+
+.
+\end_layout
+
+\end_body
+\end_document

@@ -1,0 +1,211 @@
+/*
+ *  Main authors:
+ *     Gr�goire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Gr�goire Dooms (Universit� catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2005-11-29 10:57:21 +0100 (Tue, 29 Nov 2005) $
+ *     $Revision: 271 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+#include "graph.hh"
+#include <string>
+#include <vector>
+#include <utility>
+#include <list>
+#include <map>
+#include <boost/tuple/tuple.hpp>
+#include <cstdlib>
+#include <fstream>
+#include <algorithm>
+using namespace std;
+using namespace boost;
+
+namespace Gecode { namespace Graph {
+
+unsigned readWord(std::istream& in)
+  {
+    unsigned char c1, c2;
+    c1=(char)in.get(); // Yes, I know this way I discard EOF...
+    c2=(char)in.get();
+    return c1 | (c2 << 8);
+  }
+
+std::pair<std::vector<int>,std::vector<std::pair<int,int> > > loadAmalfi(std::string f)
+{
+  std::vector<int> nodeids;
+  std::vector<std::pair<int,int> >  edges;
+  std::ifstream in(f.c_str(), std::ios::in | std::ios::binary);
+  if (!in) {std::cerr << "loadAmalfi : File " << f <<  " not found." << std::endl; return std::make_pair(nodeids,edges);};
+  unsigned ne, dest;
+  unsigned i,j;
+
+  unsigned n = readWord(in); //Nbr of nodes in the graph
+
+
+  for (i=0; i<n; i++)
+  {
+     nodeids.push_back((int) i);
+     ne = readWord(in);//nbr of neighbours of i
+     for(j=0; j<ne; j++)//j= nth neighbour of i
+     {
+	dest=readWord(in);//dest=neighbour of i
+	edges.push_back(std::make_pair((int)i,(int)dest));
+     }
+  }
+
+
+  return std::make_pair(nodeids,edges);
+}
+
+
+/** Loads a arc(a,b)arc(c,d) Graph.
+ * Returns a vector of numNodes elements giving the file node ids in order in first
+ * and a sequence of arcs in second. The node ids are from 0 to numnodes-1 the original
+ * ids can be found in first.
+ */
+
+tuple<std::vector<int>,std::vector<std::pair<int,int> >,std::map<int,int>, std::vector<int> >
+loadGraphIds(const std::string filename){
+        FILE * f = fopen(filename.c_str(),"r");
+        std::vector<std::pair<int,int> > arcs;
+        std::pair<int,int> p;
+        std::map<int,int> idsmap; // maps the node id in the file to a number in [0,numnodes[
+        std::vector<int> ids; // maps the other way around
+        if (!f){
+                std::vector<int> p(0);
+                return make_tuple(ids,arcs,idsmap,ids);
+        }
+        std::list<int> l; // list of node ids
+
+        while (fscanf(f,"arc(%d,%d)",&p.first,&p.second) == 2) {
+                l.push_back(p.first);
+                l.push_back(p.second);
+                arcs.push_back(p);
+        }
+
+        l.sort();
+        l.unique();
+        int numNodes=0;
+        for (std::list<int>::iterator ii=l.begin(); ii!=l.end(); ++ii){
+                ids.push_back(*ii);
+                idsmap[*ii] = numNodes++;
+        }
+        for (std::vector<std::pair<int,int> >::iterator ii=arcs.begin(); ii!=arcs.end(); ++ii){
+                ii->first = idsmap[ii->first];
+                ii->second = idsmap[ii->second];
+        }
+        std::sort(arcs.begin(),arcs.end());
+        vector<int> inc(ids.size());
+        for (unsigned int i=0; i<ids.size(); ++i){
+                inc[i]=i;
+        }
+        return make_tuple(inc,arcs,idsmap,ids);
+}
+
+
+/** Loads a arc(a,b)arc(c,d) Graph.
+ * Returns a vector of numNodes elements giving the file node ids in order in first
+ * and a sequence of arcs in second. The node ids are from 0 to numnodes-1 the original
+ * ids can be found in first.
+ */
+std::pair<std::vector<int>,std::vector<std::pair<int,int> > >
+loadGraph(const std::string filename){
+        FILE * f = fopen(filename.c_str(),"r");
+        std::vector<std::pair<int,int> > arcs;
+        std::pair<int,int> p;
+        if (!f){
+                std::vector<int> p(0);
+                return std::make_pair(p,arcs);
+        }
+        std::list<int> l; // list of node ids
+
+        while (fscanf(f,"arc(%d,%d)",&p.first,&p.second) == 2) {
+                l.push_back(p.first);
+                l.push_back(p.second);
+                arcs.push_back(p);
+        }
+
+        l.sort();
+        l.unique();
+        std::map<int,int> idsmap; // maps the node id in the file to a number in [0,numnodes[
+        std::vector<int> ids(l.begin(),l.end()); // maps the other way around
+        int numNodes=0;
+        for (std::list<int>::iterator ii=l.begin(); ii!=l.end(); ++ii){
+                idsmap[*ii] = numNodes++;
+        }
+        for (std::vector<std::pair<int,int> >::iterator ii=arcs.begin(); ii!=arcs.end(); ++ii){
+                ii->first = idsmap[ii->first];
+                ii->second = idsmap[ii->second];
+        }
+        return std::make_pair(ids,arcs);
+}
+
+
+vector<int> loadList(string filename){
+
+        FILE * f = fopen(filename.c_str(),"r");
+
+        std::vector<int> l;
+
+        if (!f){
+
+                return l;
+
+        }
+
+        int x;
+
+        while (fscanf(f," %d ",&x) == 1) {
+
+                l.push_back(x);
+
+        }
+
+        return l;
+
+}
+
+
+std::pair<std::vector<int>,std::vector<boost::tuple<int,int,int> > >
+loadGraphWeights(const std::string filename){
+        FILE * f = fopen(filename.c_str(),"r");
+        std::vector<boost::tuple<int,int,int> > arcsW;
+        if (!f){
+                std::vector<int> p(0);
+                return std::make_pair(p,arcsW);
+        }
+        std::list<int> l; // list of node ids
+
+        int t,h,c;
+        while (fscanf(f,"arc(%d,%d,%d)",&t,&h,&c) == 3) {
+                arcsW.push_back(boost::make_tuple(t,h,c));
+                l.push_back(t);
+                l.push_back(h);
+        }
+
+        l.sort();
+        l.unique();
+        std::map<int,int> idsmap; // maps the node id in the file to a number in [0,numnodes[
+        std::vector<int> ids(l.begin(),l.end()); // maps the other way around
+        int numNodes=0;
+        for (std::list<int>::iterator ii=l.begin(); ii!=l.end(); ++ii){
+                idsmap[*ii] = numNodes++;
+        }
+
+        for (std::vector<boost::tuple<int,int,int> >::iterator ii=arcsW.begin(); ii!=arcsW.end(); ++ii){
+               boost::tie(t,h,c) = *ii;
+                *ii  = boost::make_tuple(idsmap[t], idsmap[h], c);
+        }
+        return std::make_pair(ids,arcsW);
+}
+
+} }

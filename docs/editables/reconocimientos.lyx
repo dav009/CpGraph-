@@ -1,0 +1,111 @@
+#LyX 1.5.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass book
+\language spanish
+\inputencoding auto
+\font_roman lmodern
+\font_sans default
+\font_typewriter default
+\font_default_family rmdefault
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics emtex
+\paperfontsize default
+\spacing single
+\papersize letterpaper
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\leftmargin 3cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 2cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+\align center
+
+\lang english
+\begin_inset ERT
+status open
+
+\begin_layout Standard
+
+
+\backslash
+thispagestyle{empty}
+\end_layout
+
+\end_inset
+
+
+\lang spanish
+
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+Whatever you can do,  or dream you can,  begin it.
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+ - Johann Wolfgang von Goethe.
+ 
+\newline
+
+\end_layout
+
+\begin_layout Standard
+\align center
+Queremos dar las gracias entre muchas personas a las siguientes:
+\end_layout
+
+\begin_layout Itemize
+A nuestros padres por permitirnos la oportunidad de estudiar esta maravillosa
+ carrera.
+ 
+\end_layout
+
+\begin_layout Itemize
+A nuestro director y maestro el Ingeniero Orlando Arboleda,  quien desinteresada
+mente nos guió durante el desarrollo del proyecto.
+\end_layout
+
+\begin_layout Itemize
+A Gustavo Gutierrez quien nos colaboro,  resolvió dudas,  compartió parte
+ de su trabajo e ideas con nosotros.
+\end_layout
+
+\begin_layout Itemize
+A nuestros  profesores de Univalle Tulua y Cali como Simena Dinas ,Victor
+ Manuel Vargas y Juan Francisco Díaz quienes nos ayudaron a mejorar nuestro
+ trabajo colaborandonos con sus consejos sobre distintos aspectos como investiga
+ción y presentación del informe de Trabajo de Grado.
+\end_layout
+
+\end_body
+\end_document

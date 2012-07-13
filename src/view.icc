@@ -1,0 +1,455 @@
+
+/*
+ *  Main authors:
+ *     Gr�goire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Gr�goire Dooms (Universit� catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2006-05-22 22:19:52 +0200 (Mon, 22 May 2006) $
+ *     $Revision: 476 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+
+
+
+#include <iostream>
+#include <vector>
+ /// returns the current domain as stl data-structures
+#include <boost/tuple/tuple.hpp>
+#include "view/iter.icc"
+#include "view/arcnode.hh"
+
+
+
+
+//using namespace std;
+//using namespace boost;
+
+namespace Gecode { namespace Graph {
+class Failure: exception {};
+
+///  \brief Advisor Class used for experimentation
+class nameAdvisor2:public ViewAdvisor<Gecode::Set::SetView>
+{
+public:
+        ///tells whether the advisors set is a set of arcs or a set of Nodes, 1 indicates Node,  2 indicates Arc
+	int nombre;
+        ///it is used when outneighbors are used.
+	int indice;
+       ///it is a name to help identify graphs in propagators where more than one graphView is used, to know to which graphView was changed.
+	int graph_id;
+	 template <class A>
+  	nameAdvisor2(Space* home, Propagator* p, Council<A>& c, Gecode::Set::SetView  x0,int nombre_,int indice_,int graph_id_): ViewAdvisor<Gecode::Set::SetView>(home,p,c,x0),nombre(nombre_),indice(indice_),graph_id(graph_id_){}
+	 
+	  nameAdvisor2(Space* home, bool share,nameAdvisor2& a):ViewAdvisor<Gecode::Set::SetView>(home,share,a)
+	  {
+			this->nombre=a.nombre;
+			this->indice=a.indice;
+			this->graph_id=a.graph_id;
+	  }
+
+};
+
+
+/**
+ * \brief A graph view made over sets modeling an adjacency matrix.
+ *
+ * This Graph view is made of:
+ * - One SetVar which stores the Set of nodes.
+ * - One SetVarArray which stores the nodes OutNeighbours. e.g: outN[1] stands for the SetVar which refers to the Set of outNeighbours for Node 1.
+ * each line of the matrix is a set variable.
+ * \ingroup TaskPropViews
+ * \ingroup TaskModel
+ */
+struct OutAdjSetsGraphView  {
+
+         ///subscribes the view to a council with nameAdvisors2	
+	void subscribe(Space* home, Propagator* p,Council< nameAdvisor2 >* co ,int graph_id);
+    
+	std::pair<int,int> getArc(nameAdvisor2 advisor, const Gecode::Set::SetDelta* delta);
+
+        SetVar nodes; ///< a set of node ids
+        SetVarArray outN; /// an Array of out-neighbours: at index i, get all out-neighbours of node i
+
+        /// \name Constructors and initialization
+        //@{
+        /** \brief  Default constructor
+         */
+        OutAdjSetsGraphView(void);
+        /** \brief  Builds a Graph view over a set of nodes and an array of outneighbors
+         *
+         * The size of the \p outN array must be equal to nodes.max()-1
+         */
+        OutAdjSetsGraphView(Space *home, SetVar nodes, SetVarArray outN);
+        /** \brief  Builds a Graph view with the given lists of nodes and arcs as an upper bound and an empty lower bound
+         *
+         */
+        OutAdjSetsGraphView(Space *home, const pair<vector<int>,vector<pair<int,int> > >& graph);
+        /** \brief  Builds a Graph view with an empty lower bound and a complete grpah of \p numNodes nodes as the upper bound
+         */
+        OutAdjSetsGraphView(Space *home, int numNodes);
+
+        /// \brief copy constructor for cloning
+        OutAdjSetsGraphView(const OutAdjSetsGraphView&);
+        //@}
+
+        /** support for propagators */
+        /// subscribe \a p to this view with graph PC \a pc
+        void subscribe(Space* home, Propagator* p, PropCond pc);
+
+        /// subscribe \a a to this view
+      //  void subscribe(Space* home, Advisor* a);
+
+
+        /// cancel \a p to this view with graph PC \a pc
+        void cancel(Space *home,Propagator* p, PropCond pc);
+        /// update this view during space cloning
+        void update(Space* home, bool share, OutAdjSetsGraphView& x);
+        /// \ingroup Basic tells for propagators
+        //@{
+        /// \brief include an arc (\a a, \a b).
+        ModEvent _arcIn(Space *, int a, int b);
+        /// \brief exclude an arc (\a a, \a b).
+        ModEvent _arcOut(Space *, int a, int b);
+        /// \brief include a node \a a.
+        ModEvent _nodeIn(Space *, int a);
+        /// \brief exclude a node \a a.
+        ModEvent _nodeOut(Space *, int a);
+        //@}
+        /*\name Basic iterator tells for propagators
+         *
+         * The arc iterators must be Gecode-value-style (val / op++ / op()) and
+         * the value type must be a std::pair<int,int> of node ids
+         *
+         * The node iterators must be Gecode-value-style (val / op++ / op()) and
+         * the value type must be a int node id
+         */
+        //@{
+        /// \brief includes all the arcs of I in the lower bound of the graph
+        template <class I>
+        ModEvent _arcsIn(Space *, I&);
+        /// \brief excludes all the arcs of I from the upper bound of the graph
+        template <class I>
+        ModEvent _arcsOut(Space *, I&);
+        /// \brief includes all the nodes of I in the lower bound of the graph
+        template <class I>
+        ModEvent _nodesIn(Space *, I&);
+        /// \brief excludes all the nodes of I from the upper bound of the graph
+        template <class I>
+        ModEvent _nodesOut(Space *, I&);
+        /// sets the graph to its upper bound
+        void instantiateUB(Space *);
+        /// sets the graph to its lower bound
+        void instantiateLB(Space *);
+        //@}
+
+        ///\name Reflexion
+        //@{
+        /// maximum number of nodes of the graph
+        int lubOrder() const;
+        /// minimum number of nodes of the graph
+        int glbOrder() const;
+        /// maximum number of arcs of the graph
+        int lubSize() const;
+        /// maximum number of arcs of the graph
+        int glbSize() const;
+        /// maximum possible node id of this graph
+        int maxNodeId() const;
+        // template used internally to define arc iterators
+        template <class> class _int_pair_gecode_iterator_outn;
+
+
+        typedef _int_pair_gecode_iterator_outn<Gecode::Set::LubRanges<Gecode::Set::SetView> > LubArcIterator ;
+        typedef _int_pair_gecode_iterator_outn<Gecode::Set::GlbRanges<Gecode::Set::SetView> > GlbArcIterator ;
+
+        /// returns a gecode val iterator on the arcs of the glb
+        GlbArcIterator iter_arcs_LB() const;
+        /// returns a gecode val iterator on the arcs of the glb
+        LubArcIterator iter_arcs_UB() const;
+        typedef Iter::Ranges::ToValues<SetVarLubRanges> LubNodeIterator ;
+        typedef Iter::Ranges::ToValues<SetVarGlbRanges> GlbNodeIterator ;
+        /// returns a gecode val iterator on the nodes of the glb
+        GlbNodeIterator iter_nodes_LB() const;
+        /// returns a gecode val iterator on the nodes of the glb
+        LubNodeIterator iter_nodes_UB() const;
+        typedef SetVarLubRanges LubNodeRangesIterator ;
+        typedef SetVarGlbRanges GlbNodeRangesIterator ;
+        /// returns a gecode range iterator on the nodes of the glb
+        GlbNodeRangesIterator iter_nodes_ranges_LB() const;
+        /// returns a gecode range iterator on the nodes of the lub
+        LubNodeRangesIterator iter_nodes_ranges_UB() const;
+        /// tells if a node is in the upper bound of the graph
+        bool nodeIsInUB(int a);
+        /// tells if a node is in the lower bound of the graph
+        bool nodeIsInLB(int a);
+        /// tells if a arc is in the upper bound of the graph
+        bool arcIsInUB(int a, int b);
+        /// tells if a arc is in the lower bound of the graph
+        bool arcIsInLB(int a, int b);
+        /// sets \a nei to the vector of inward neighbours of a in the lub
+        void inNeighboursUB(int a, vector<int> &nei);
+        /// sets \a nei to the vector of inward neighbours of a in the glb
+        void inNeighboursLB(int a, vector<int> &nei);
+        /// sets \a nei to the vector of outward neighbours of a in the lub
+        void outNeighboursUB(int a, vector<int> &nei);
+        /// sets \a nei to the vector of outward neighbours of a in the glb
+        void outNeighboursLB(int a, vector<int> &nei);
+        /// returns the inward degree of node a in the lub
+        int inDegreeUB(int a);
+        /// returns the inward degree of node a in the glb
+        int inDegreeLB(int a);
+        /// returns the outward degree of node a in the lub
+        int outDegreeUB(int a);
+        /// returns the outward degree of node a in the glb
+        int outDegreeLB(int a);
+        /// returns true if the domain of the nodes is a singleton
+        bool nodeAssigned() const;
+        /// returns true if the domain is a singleton
+        bool assigned() const;
+        /// returns the current domain as stl data-structures
+        boost::tuple<vector<int>,vector<int>,vector<pair<int,int> >,vector<pair<int,int> > > get_domain();
+        //@}
+        /// default branching strategy
+        void distrib(Space * home);
+        void print(void);
+        private:
+        /// \brief posts the inherent graph constraint on the underlying views
+        void arcImpliesNodes(Space * home);
+        std::pair<PropCond,PropCond> pc_g_to_set(PropCond pc);
+
+
+};
+
+
+
+
+/** \brief A graph view made over 2 sets: one for the nodes and one for the arcs.
+ *
+ * ArcNode is a datastructure for encoding/decoding arcs (pairs of nodes) as ints.
+ *This Graph View is made of:
+  * - a SetVar which stores the set of nodes
+  * - a SetVar which stores the set of arcs.
+  * At the begginning a number is assigned to each arc, so they can be stored in just
+ * \ingroup TaskPropViews
+ * \ingroup TaskModel
+ */
+template <class ArcNode=DefaultArcNode>
+struct NodeArcSetsGraphViewT  {
+           SetVar nodes;
+           SetVar arcs;
+           ArcNode *an;
+
+
+        ///subscribes the view to a council with nameAdvisors2	
+	void subscribe(Space* home, Propagator* p,Council< nameAdvisor2 >* co,int graph_id );
+
+	std::pair<int,int> getArc(nameAdvisor2 advisor, const Gecode::Set::SetDelta* delta);
+
+        /// \name Constructors and initialization
+        /// They all take an pointer to an ArcNode for the mapping between arc numbers and pairs of nodes.
+        //@{
+        ///\brief  Default constructor
+        NodeArcSetsGraphViewT<ArcNode>();
+        ///\brief  Constructor from a given set of \a nodes and a given set of \a arcs
+        NodeArcSetsGraphViewT<ArcNode>(Space *home, SetVar nodes, SetVar arcs,ArcNode *a);
+        /** \brief  Constructor from a given vector nodes and vector of arcs
+         *
+         * PRE: the \a nodes must be a vector of consecutive integers from 0 to N-1
+         */
+        NodeArcSetsGraphViewT<ArcNode>(Space *home, const pair<vector<int>,vector<pair<int,int> > >& graph,ArcNode *a=NULL);
+        ///\brief  Constructor for a complete upperbound graph of order \a numNodes
+        NodeArcSetsGraphViewT<ArcNode>(Space *home, int numNodes,ArcNode *a=NULL);
+
+
+        ///\brief  Assignment copy constructor
+        NodeArcSetsGraphViewT<ArcNode>(const NodeArcSetsGraphViewT<ArcNode>&);
+        //@}
+
+        /// \name Support for propagators
+        //@{
+        /// subscribe \a p to this view with graph PC \a pc
+        void subscribe(Space* home, Propagator* p, PropCond pc);
+
+        /// subscribe \a a to this view
+        //void subscribe(Space* home, Advisor* a);
+
+        /// cancel \a p to this view with graph PC \a pc
+        void cancel(Space *home,Propagator* p, PropCond pc);
+        /// update this view during space cloning
+        void update(Space* home, bool share, NodeArcSetsGraphViewT<ArcNode>& x);
+        //@}
+        /** \name basic tells for propagators
+         *
+         * Should not be used in modelling, only in propagators and branchings
+         */
+        //@{
+        /// includes an arc (a,b)
+        ModEvent _arcIn(Space *, int a, int b);
+        /// excludes an arc (a,b)
+        ModEvent _arcOut(Space *, int a, int b);
+        /// includes a node a
+        ModEvent _nodeIn(Space *, int a);
+        /// excludes a node a
+        ModEvent _nodeOut(Space *, int a);
+        //@}
+        /** \name Basic iterator tells for propagators
+         *
+         *  The iterators must be Gecode-value-style (val / op++ / op()) and
+         *  the value type must be a std::pair<int,int> of node ids
+         *
+         *  The node iterators must be Gecode-value-style (val / op++ / op()) and
+         *  the value type must be a int node id
+         */
+        //@{
+        /// \brief includes all the arcs of I in the lower bound of the graph
+        template <class I>
+        ModEvent _arcsIn(Space *, I&);
+        /// \brief excludes all the arcs of I from the upper bound of the graph
+        template <class I>
+        ModEvent _arcsOut(Space *, I&);
+        /// \brief includes all the nodes of I in the lower bound of the graph
+        template <class I>
+        ModEvent _nodesIn(Space *, I&);
+        /// \brief excludes all the nodes of I from the upper bound of the graph
+        template <class I>
+        ModEvent _nodesOut(Space *, I&);
+        /// sets the graph to its upper bound
+        void instantiateUB(Space *);
+        /// sets the graph to its lower bound
+        void instantiateLB(Space *);
+        //@}
+
+        /** \name Reflexion
+         */
+        //@{
+        /// maximum number of nodes of the graph
+        int lubOrder() const;
+        /// minimum number of nodes of the graph
+        int glbOrder() const;
+        /// maximum number of arcs of the graph
+        int lubSize() const;
+        /// maximum number of arcs of the graph
+        int glbSize() const;
+        /// maximum possible node id of this graph
+        int maxNodeId() const;
+        /* \name Arc iterators
+         * Arc iterators have the gecode iterator interface. The val() method returns a pair<int,int>
+         */
+        //@{
+        //
+        /// template used internally to define arc iterators
+        template <class> class _int_pair_gecode_iterator_2vars;
+        typedef _int_pair_gecode_iterator_2vars<SetVarLubRanges> LubArcIterator ;
+        typedef _int_pair_gecode_iterator_2vars<SetVarGlbRanges> GlbArcIterator ;
+        /// returns a gecode val iterator on the arcs of the glb
+        GlbArcIterator iter_arcs_LB() const;
+        /// returns a gecode val iterator on the arcs of the glb
+        LubArcIterator iter_arcs_UB() const;
+        typedef Iter::Ranges::ToValues<SetVarLubRanges> LubNodeIterator ;
+        typedef Iter::Ranges::ToValues<SetVarGlbRanges> GlbNodeIterator ;
+        /// returns a gecode val iterator on the nodes of the glb
+        GlbNodeIterator iter_nodes_LB() const;
+        /// returns a gecode val iterator on the nodes of the glb
+        LubNodeIterator iter_nodes_UB() const;
+        typedef SetVarLubRanges LubNodeRangesIterator ;
+        typedef SetVarGlbRanges GlbNodeRangesIterator ;
+        /// returns a gecode range iterator on the nodes of the glb
+        GlbNodeRangesIterator iter_nodes_ranges_LB() const;
+        /// returns a gecode range iterator on the nodes of the lub
+        LubNodeRangesIterator iter_nodes_ranges_UB() const;
+        /// tells if a node is in the upper bound of the graph
+        bool nodeIsInUB(int a) const;
+        /// tells if a node is in the lower bound of the graph
+        bool nodeIsInLB(int a) const;
+        /// tells if a arc is in the upper bound of the graph
+        bool arcIsInUB(int a, int b) const;
+        /// tells if a arc is in the lower bound of the graph
+        bool arcIsInLB(int a, int b) const;
+        /// sets \a nei to the vector of inward neighbours of a in the lub
+        void inNeighboursUB(int a, vector<int> &nei) const;
+        /// sets \a nei to the vector of inward neighbours of a in the glb
+        void inNeighboursLB(int a, vector<int> &nei) const;
+        /// sets \a nei to the vector of outward neighbours of a in the lub
+        void outNeighboursUB(int a, vector<int> &nei) const;
+        /// sets \a nei to the vector of outward neighbours of a in the glb
+        void outNeighboursLB(int a, vector<int> &nei) const;
+        /// returns the inward degree of node a in the lub
+        int inDegreeUB(int a) const;
+        /// returns the inward degree of node a in the glb
+        int inDegreeLB(int a) const;
+        /// returns the outward degree of node a in the lub
+        int outDegreeUB(int a) const;
+        /// returns the outward degree of node a in the glb
+        int outDegreeLB(int a) const;
+        /// returns true if the domain is a singleton
+        bool assigned() const;
+        /// returns true if the domain of the nodes is a singleton
+        bool nodeAssigned() const;
+        //@}
+        /// returns the current domain as stl data-structures
+        boost::tuple<vector<int>,vector<int>,vector<pair<int,int> >,vector<pair<int,int> > > get_domain();
+        /// default branching strategy
+        void distrib(Space * home);
+        private:
+        /// \brief posts the inherent graph constraint on the underlying views
+        void arcImpliesNodes(Space * home);
+        std::pair<PropCond,PropCond> pc_g_to_set(PropCond pc);
+
+
+        // template used internally to define arc iterators
+              /*  typedef GraphVarImp::LubArcIterator LubArcIterator ;
+                typedef GraphVarImp::GlbArcIterator GlbArcIterator ;
+                typedef GraphVarImp::UnkArcIterator UnkArcIterator ;
+                GlbArcIterator iter_arcs_LB() const;
+                LubArcIterator iter_arcs_UB() const;
+                UnkArcIterator iter_arcs_Unk() const;
+                typedef GraphVarImp::LubNodeIterator LubNodeIterator ;
+                typedef GraphVarImp::GlbNodeIterator GlbNodeIterator ;
+                typedef GraphVarImp::UnkNodeIterator UnkNodeIterator ;
+                GlbNodeIterator iter_nodes_LB() const;
+                LubNodeIterator iter_nodes_UB() const;
+                UnkNodeIterator iter_nodes_Unk() const;
+                typedef GraphVarImp::LubNodeRangesIterator LubNodeRangesIterator ;
+                typedef GraphVarImp::GlbNodeRangesIterator GlbNodeRangesIterator ;
+                GlbNodeRangesIterator iter_nodes_ranges_LB() const;
+                LubNodeRangesIterator iter_nodes_ranges_UB() const;*/
+};
+
+typedef NodeArcSetsGraphViewT<> NodeArcSetsGraphView;
+
+/**
+ * \brief SetView for the nodes of a GraphView
+ * \relates Gecode::Graph::GraphView
+ * \relates Gecode::Set::SetView
+ * specialized for different graphviews
+ */
+
+template <class GraphView>
+struct NodeSetView: public Set::SetView {
+          NodeSetView(const GraphView &){}
+          NodeSetView(){}
+};
+
+
+} }
+std::ostream&
+operator<<(std::ostream&, const Gecode::Graph::OutAdjSetsGraphView&);
+template<class ArcNode>
+std::ostream&
+operator<<(std::ostream&, const Gecode::Graph::NodeArcSetsGraphViewT<ArcNode>&);
+#include "view/outadjsets.icc"
+#include "view/nodearcsets.icc"
+#include "view/boundsgraphs.icc"
+#include "view/nodeset.icc"
+
+
+// STATISTICS: graph-var
+

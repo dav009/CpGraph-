@@ -1,0 +1,666 @@
+
+/*
+ *  Main authors:
+ *     Gr�goire Dooms <dooms@info.ucl.ac.be>
+ *
+ *  Copyright:
+ *     Gr�goire Dooms (Universit� catholique de Louvain), 2005
+ *
+ *  Last modified:
+ *     $Date: 2006-01-26 14:18:00 +0100 (Thu, 26 Jan 2006) $
+ *     $Revision: 318 $
+ *
+ *  This file is part of CP(Graph)
+ *
+ *  See the file "contribs/graph/LICENSE" for information on usage and
+ *  redistribution of this file, and for a
+ *     DISCLAIMER OF ALL WARRANTIES.
+ *
+ */
+
+
+#include <stdio.h>
+#include <vector>
+#include <list>
+#include <iostream>
+#include <fstream>
+#include <boost/graph/strong_components.hpp>
+#include <boost/graph/graphviz.hpp>
+#include <boost/graph/graph_utility.hpp>
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/topological_sort.hpp>
+#include <boost/graph/depth_first_search.hpp>
+#include <boost/graph/dijkstra_shortest_paths.hpp>
+#include <boost/graph/visitors.hpp>
+#include "graph.hh"
+
+#undef  TRACE
+#define TRACE(A)
+
+//using namespace boost;
+//using namespace std;
+namespace Gecode { namespace Graph {
+
+
+OutAdjSetsGraphView::OutAdjSetsGraphView(void){
+}
+OutAdjSetsGraphView::OutAdjSetsGraphView(const OutAdjSetsGraphView& x): nodes(x.nodes), outN(x.outN){
+}
+
+OutAdjSetsGraphView::OutAdjSetsGraphView(Space *home, SetVar nodes, SetVarArray outN): nodes(nodes), outN(outN){
+    arcImpliesNodes(home);
+
+}
+OutAdjSetsGraphView::OutAdjSetsGraphView(Space * home, int numNodes):nodes(home,IntSet::empty,0,numNodes-1), outN(home, numNodes, IntSet::empty, 0, numNodes-1) {
+    arcImpliesNodes(home);
+}
+OutAdjSetsGraphView::OutAdjSetsGraphView(Space *home, const pair<vector<int>,vector<pair<int,int> > >& graph){
+//FIXME node values ignored, still have to translate nodes to [0, numNodes-1]
+
+        const vector<pair<int,int> >& arcs =  graph.second;
+        std::vector<std::pair<int,int> >::const_iterator it;
+
+        int numNodes = graph.first.size();
+        for  (it = arcs.begin(); it != arcs.end(); ++it){
+                assert(it->first < numNodes);
+                assert(it->second < numNodes);
+        }
+
+        typedef std::vector<std::list<int> > al;
+        al out(numNodes);
+
+        for  (it= arcs.begin(); it!= arcs.end(); ++it){
+                TRACE(cout <<"arc("<<it->first<<","<<it->second<<")");
+                out[it->first].push_back(it->second);
+        }
+        TRACE(cout <<endl<< "outneigh loaded" <<endl);
+        for  (unsigned int i=0; i<out.size(); i++){
+                out[i].sort();
+                out[i].unique();
+        }
+        TRACE(cout << "outneigh sorted / uniqued" <<endl);
+
+        // Create the nodes variable
+        SetVar nodesVar(home, IntSet::empty, 0, numNodes-1);
+        // update the nodes view
+        nodes = nodesVar;
+        // create the out neighbors variables
+        outN = SetVarArray(home, numNodes, IntSet::empty, 0, numNodes);
+        // Setting upper bounds for outneighbours
+        for (int i=0; i<numNodes; i++){
+                std::vector<int> vals(out[i].size());
+                int j=0;
+                for (list<int>::const_iterator k=out[i].begin(); k!=out[i].end(); ++k,++j){
+                        vals[j] = *k;
+                }
+                IntSet a(&vals[0], out[i].size());
+                Gecode::Set::SetView s(outN[i]);
+                Gecode::IntSetRanges ar(a) ;
+                GECODE_ME_FAIL(home,s.intersectI(home, ar ));
+        }
+        TRACE(cout << "upperbounds set up" <<endl);
+        TRACE(cout.flush());
+        arcImpliesNodes(home);
+}
+
+
+
+void OutAdjSetsGraphView::distrib(Space * home){ //FIXME
+
+
+  
+
+
+        SetVarArgs args(outN.size()+1);
+        for (int i=0; i<outN.size(); i++){
+                args[i] = outN[i];
+        }
+        args[outN.size()] = nodes;
+         branch(home,args,SET_VAR_NONE,  SET_VAL_MIN);
+   
+}
+
+
+
+
+
+
+
+
+
+void OutAdjSetsGraphView::arcImpliesNodes(Space * home){
+        int numNodes = outN.size();
+        BoolVarArray b(home,3*numNodes,0,1);
+        #define iInNodes(i)  b[0+3*(i)]
+        #define iNotInNodes(i) b[1+3*(i)]
+        #define iOutsEmpty(i) b[2+3*(i)]
+        // Impossible de Remplacer par un emptyview ??
+        Gecode::IntSet empty;
+
+        for (int i=0 ; i<numNodes ; i++){
+                //deprecated in gecode 2.1.1 include(home,nodes,i,iInNodes(i));
+                dom(home, nodes, SRT_SUP, i, iInNodes(i));
+                // deprecated in gecode 2.1.1 gecodebool_not(home, iInNodes(i), iNotInNodes(i));
+                rel(home, iInNodes(i),IRT_NQ  , iNotInNodes(i));
+                dom(home, outN[i], SRT_EQ, empty, iOutsEmpty(i));
+        }
+
+        /* Arc Implies nodes part 1 : no_node -> no incoming arc, arc -> target node*/
+
+        for (int i=numNodes; i--;){
+                TRACE(cout<<i << " ");
+                TRACE(cout.flush());
+                rel(home, outN[i], SRT_SUB, nodes);
+        }
+
+        TRACE(cout << "arc=>node 1 set up" <<endl);
+        /* Arc Implies nodes part 2 : no_node -> no outgoing arc, arc -> source node*/
+
+        BoolVar True(home,1,1);
+        for (int i=0 ; i<numNodes ; i++){
+                if (i%10 ==0) { TRACE(cout << i<<" arc=>node 2 set up" <<endl);}
+               //deprecated in gecode 2.1.1  bool_imp(home,iNotInNodes(i),iOutsEmpty(i),True);
+               // constraint: (A=>B)=true is made by:
+                rel(home,iNotInNodes(i),BOT_IMP,iOutsEmpty(i),True);
+        }
+        TRACE(cout << "fini" << endl);
+}
+
+
+
+namespace Temp {
+        int count =0 ;
+}
+
+
+void OutAdjSetsGraphView::instantiateUB(Space * home){
+        if (home->failed())
+                return;
+        int numNodes = outN.size() ;
+        for (int i=0; i<numNodes; i++){
+                Set::SetView v(outN[i]);
+                GECODE_ME_FAIL(home,v.cardMin(home,v.cardMax()));
+                if (home->failed())
+                    return; //not reached
+                assert(outN[i].assigned());
+        }
+        Set::SetView v(nodes);
+        GECODE_ME_FAIL(home,v.cardMin(home,v.cardMax()));
+        if (home->failed())
+                return; //not reached
+        assert(nodes.assigned());
+}
+
+
+
+/** Stuff for propagators */
+
+/** Returns the PropCond for the nodes and the arcs according to the graph propCond*/
+std::pair<PropCond,PropCond> OutAdjSetsGraphView::pc_g_to_set(PropCond pc){
+    return make_pair(Set::PC_SET_ANY,Set::PC_SET_ANY);
+}
+/** subscribes all implem variables with the propagator */
+void OutAdjSetsGraphView::subscribe(Space* home, Propagator* p, PropCond pc){
+        PropCond npc,apc;
+       boost::tie(npc,apc) = pc_g_to_set(pc);
+        VarArgArray<SetVar> outNVA(outN);
+        ViewArray<Set::SetView> outNV(home,outNVA);
+        outNV.subscribe(home,p,apc);
+        Set::SetView nodesV(nodes);
+        nodesV.subscribe(home,p,npc);
+}
+
+
+std::pair<int,int> OutAdjSetsGraphView::getArc(nameAdvisor2 advisor,const Gecode::Set::SetDelta* delta)
+{
+	//we make sure we are handling an advisor which refers to an arc
+	if(advisor.nombre==2)
+	{
+	
+		if(delta->glbAny()==0)
+		{
+			std::pair<int,int> sal(advisor.indice,delta->glbMin());
+			return sal;
+		}
+		if(delta->lubAny()==0)
+		{
+			std::pair<int,int> sal(advisor.indice,delta->lubMin());
+			return sal;
+		}
+		
+	}
+	std::pair<int,int> sal(-1,-1);
+	return sal;
+	
+}
+
+
+void OutAdjSetsGraphView::subscribe(Space* home, Propagator* p,Council< nameAdvisor2 >* co ,int graph_id){
+
+			
+			Set::SetView nodesV1(nodes);
+			//nodes are subscribed to the advisor, the name given for the nodes is: "1".
+                    	(void) new (home) nameAdvisor2(home,p,*co,nodesV1,1,-1,graph_id);
+                        for(int i=0;i<outN.size();i++)
+                        {
+                        //each outN set is subscribed, the indice varaible is used, and the name given for the arcs is: "2"
+                       	(void) new (home) nameAdvisor2(home,p,*co,outN[i],2,i,graph_id);
+                        }
+}
+
+
+void OutAdjSetsGraphView::cancel(Space* home,Propagator* p, PropCond pc){
+        int numNodes = outN.size();
+        PropCond npc,apc;
+       boost::tie(npc,apc) = pc_g_to_set(pc);
+        for (int i=numNodes;--i; ){
+            Set::SetView outNiV(outN[i]);
+            outNiV.cancel(home,p,apc);
+        }
+    
+        Set::SetView nodesV(nodes);
+        nodesV.cancel(home,p,npc);
+}
+
+
+
+
+void OutAdjSetsGraphView::update(Space* home, bool share, OutAdjSetsGraphView& x){
+        outN.update(home, share, x.outN);
+        nodes.update(home, share, x.nodes);
+
+}
+/* basic tells for propagators */
+
+forceinline ModEvent OutAdjSetsGraphView::_arcIn(Space* home, int a, int b){
+#ifdef CPGCHECKTELLS
+        bool in = && ! arcIsInLB(a,b);
+        if (! arcIsInUB(a,b)){
+                TRACE(cout << "returning arcIn" << a << " "<< b<< " ME_GRAPH_FAILED"<< endl);
+                return Set::ME_GRAPH_FAILED;
+        }   //XXX
+
+        if (arcIsInLB(a,b)){
+                TRACE(cout << "returning arcIn" << a << " "<< b<< " ME_GRAPH_NONE"<< endl);
+                return Set::ME_GRAPH_NONE;
+        }   //XXX
+#endif
+        Set::SetView v(outN[a]);
+        return v.include(home,b);
+}
+
+
+forceinline ModEvent OutAdjSetsGraphView::_arcOut(Space* home, int a, int b){
+#ifdef CPGCHECKTELLS
+        if (arcIsInLB(a,b)){
+                TRACE(cout << "returning arcOut" << a << " "<< b<< " ME_GRAPH_FAILED"<< endl);
+                return Set::ME_GRAPH_FAILED;
+        }   //XXX
+        if (!arcIsInUB(a,b)){
+                TRACE(cout << "returning arcOut" << a << " "<< b<< " ME_GRAPH_NONE"<< endl);
+                return Set::ME_GRAPH_NONE;
+        }   //XXX
+#endif
+
+        Set::SetView v(outN[a]);
+        return v.exclude(home,b);
+}
+forceinline ModEvent OutAdjSetsGraphView::_nodeIn(Space* home, int a){
+#ifdef CPGCHECKTELLS
+        if (!nodeIsInUB(a)){
+                TRACE(cout << "returning nodeIn" << a <<  " ME_GRAPH_FAILED"<< endl);
+                return Set::ME_GRAPH_FAILED;
+        }   //XXX
+        if (nodeIsInLB(a)){
+                TRACE(cout << "returning nodeIn" << a <<  " ME_GRAPH_NONE"<< endl);
+                return Set::ME_GRAPH_NONE;
+        }   //XXX
+#endif
+        Set::SetView v(nodes);
+        return v.include(home,a);
+}
+
+forceinline ModEvent OutAdjSetsGraphView::_nodeOut(Space* home, int a){
+#ifdef CPGCHECKTELLS
+        if (nodeIsInLB(a)){
+                TRACE(cout << "returning nodeOut" << a <<  " ME_GRAPH_FAILED"<< endl);
+                return Set::ME_GRAPH_FAILED;
+        }   //XXX
+        if (!nodeIsInUB(a)){
+                TRACE(cout << "returning nodeOut" << a <<  " ME_GRAPH_NONE"<< endl);
+                return Set::ME_GRAPH_NONE;
+        }   //XXX
+#endif
+        Set::SetView v(nodes);
+        return v.exclude(home,a);
+}
+
+/// \brief includes all the arcs in the lower bound of the graph
+template <class I>
+ModEvent OutAdjSetsGraphView::_arcsIn(Space * home, I& i){
+        if (!i()) {return Gecode::Graph::ME_GRAPH_NONE; }
+        int t,h;
+       boost::tie(t,h) = i.val();
+        ModEvent me=Gecode::Graph::ME_GRAPH_NONE;
+        while (i()){
+                int cur_t = t;
+                list<int> heads;
+                while (t==cur_t){
+                        heads.push_back(h);
+                        ++i; if (!i()) break;
+                       boost::tie(t,h) = i.val();
+                } // either !i() or t,h is new pair with t!= cur_t
+                Set::SetView v(outN[cur_t]);
+                StlToGecodeValIterator<list<int>::iterator> iv(heads.begin(),heads.end());
+                Iter::Values::ToRanges<StlToGecodeValIterator<list<int>::iterator> > r(iv);
+                ModEvent me1 = v.includeI(home,r);
+                GECODE_ME_CHECK(me1);
+                if (me_modified(me1)) me = Gecode::Graph::ME_GRAPH_GLB;
+        }
+        return me;
+
+}
+/// \brief excludes all the arcs from the upper bound of the graph
+template <class I>
+ModEvent OutAdjSetsGraphView::_arcsOut(Space * home, I& i){
+        if (!i()) {return Gecode::Graph::ME_GRAPH_NONE; }
+        int t,h;
+       boost::tie(t,h) = i.val();
+        ModEvent me=Gecode::Graph::ME_GRAPH_NONE;
+        while (i()){
+                int cur_t = t;
+                list<int> heads;
+                while (t==cur_t){
+                        heads.push_back(h);
+                        ++i; if (!i()) break;
+                       boost::tie(t,h) = i.val();
+                } // either !i() or t,h is new pair with t!= cur_t
+                Set::SetView v(outN[cur_t]);
+                StlToGecodeValIterator<list<int>::iterator> iv(heads.begin(),heads.end());
+                Iter::Values::ToRanges<StlToGecodeValIterator<list<int>::iterator> > r(iv);
+                ModEvent me1 = v.excludeI(home,r);
+                GECODE_ME_CHECK(me1);
+                if (me_modified(me1)) me = Gecode::Graph::ME_GRAPH_LUB;
+        }
+        return me;
+}
+/// \brief includes all the nodes in the lower bound of the graph
+template <class I>
+ModEvent OutAdjSetsGraphView::_nodesIn(Space * home, I& i){
+        Iter::Values::ToRanges<I> r(i);
+        Set::SetView v(nodes);
+        return v.includeI(home,r);
+}
+/// \brief excludes all the nodes from the upper bound of the graph
+template <class I>
+ModEvent OutAdjSetsGraphView::_nodesOut(Space * home, I& i){
+        Iter::Values::ToRanges<I> r(i);
+        Set::SetView v(nodes);
+        return v.excludeI(home,r);
+}
+
+/// \brief Arc iterator for the OutAdjSetsGraphView
+template <class It>
+class OutAdjSetsGraphView::_int_pair_gecode_iterator_outn {
+        OutAdjSetsGraphView *gp;
+        int N;
+        int numNodes;
+        Iter::Ranges::ToValues<It> outNIter;
+        public:
+        _int_pair_gecode_iterator_outn(OutAdjSetsGraphView *g): gp(g),N(0), numNodes(gp->outN.size())
+        {
+            if (numNodes == 0) return;
+            It it(g->outN[0]);
+            outNIter =  Iter::Ranges::ToValues<It>(it);
+            while (!outNIter() && N<numNodes-1){ // go to next node if this node has no neighbors
+                  N++;
+                  It it(gp->outN[N]);
+                  outNIter = Iter::Ranges::ToValues<It>(it);
+          	}
+        }
+
+      bool operator() (void) { // has next
+    	  return  (N<=numNodes-1) && (outNIter());
+      }
+      pair<int,int>  val (void){
+              return make_pair(N,outNIter.val());
+      }
+
+      void operator++ (void){ // go to next
+              ++outNIter;
+              while (!outNIter() && N<numNodes-1){ // go to next node if this node has no neighbors
+                  N++;
+                  It it(gp->outN[N]);
+                  outNIter = Iter::Ranges::ToValues<It>(it);
+              }
+
+      }
+};
+
+
+
+
+forceinline
+OutAdjSetsGraphView::GlbArcIterator OutAdjSetsGraphView::iter_arcs_LB() const{
+         OutAdjSetsGraphView::GlbArcIterator  it(const_cast<OutAdjSetsGraphView*>(this));
+        return it;
+}
+
+forceinline
+OutAdjSetsGraphView::LubArcIterator OutAdjSetsGraphView::iter_arcs_UB() const{
+        OutAdjSetsGraphView::LubArcIterator  it(const_cast<OutAdjSetsGraphView*>(this));
+        return it;
+}
+
+forceinline
+OutAdjSetsGraphView::GlbNodeRangesIterator OutAdjSetsGraphView::iter_nodes_ranges_LB() const{
+        SetVarGlbRanges l(nodes);
+        return l;
+}
+
+forceinline
+OutAdjSetsGraphView::LubNodeRangesIterator OutAdjSetsGraphView::iter_nodes_ranges_UB() const{
+        SetVarLubRanges u(nodes);
+        return u;
+}
+
+forceinline
+OutAdjSetsGraphView::GlbNodeIterator OutAdjSetsGraphView::iter_nodes_LB() const{
+        SetVarGlbRanges l(nodes);
+        Iter::Ranges::ToValues<SetVarGlbRanges> lv(l) ;
+        return lv;
+}
+
+forceinline
+OutAdjSetsGraphView::LubNodeIterator OutAdjSetsGraphView::iter_nodes_UB() const{
+        SetVarLubRanges u(nodes);
+        Iter::Ranges::ToValues<SetVarLubRanges> uv(u);
+        return uv;
+}
+
+/* Reflexion */
+int OutAdjSetsGraphView::lubOrder() const{
+        return nodes.lubSize();
+}
+int OutAdjSetsGraphView::glbOrder() const{
+        return nodes.glbSize();
+}
+int OutAdjSetsGraphView::lubSize() const{
+        int sum = 0;
+        for (int i=outN.size(); --i;)
+                sum += outN[i].lubSize();
+        return sum;
+}
+int OutAdjSetsGraphView::glbSize() const{
+        int sum = 0;
+        for (int i=outN.size(); --i;)
+                sum += outN[i].glbSize();
+        return sum;
+}
+int OutAdjSetsGraphView::maxNodeId() const{
+        return nodes.lubMax();
+}
+bool OutAdjSetsGraphView::nodeIsInUB(int a) {
+        return !nodes.notContains(a);
+}
+bool OutAdjSetsGraphView::nodeIsInLB(int a){
+        return nodes.contains(a);
+}
+bool OutAdjSetsGraphView::arcIsInUB(int a, int b){
+        return ! outN[a].notContains(b);
+
+}
+bool OutAdjSetsGraphView::arcIsInLB(int a, int b){
+        return  outN[a].contains(b);
+}
+
+void OutAdjSetsGraphView::inNeighboursUB(int a, vector<int> &nei){
+        int numNodes = outN.size();
+        nei.clear();
+        for (int i=0 ; i<numNodes; i++){
+                if (arcIsInUB(i,a))
+                        nei.push_back(i);
+        }
+}
+
+
+void OutAdjSetsGraphView::inNeighboursLB(int a, vector<int> &nei){
+        int numNodes = outN.size();
+        nei.clear();
+        for (int i=0 ; i<numNodes; i++){
+                if (arcIsInLB(i,a))
+                        nei.push_back(i);
+        }
+}
+
+void OutAdjSetsGraphView::outNeighboursUB(int a, vector<int> &nei){
+        SetVarLubRanges i(outN[a]);
+        nei.clear();
+        while(i()){
+                for (int j=i.min(); j<=i.max(); ++j)
+                {
+                        nei.push_back(j);
+                }
+                ++i;
+        }
+}
+void OutAdjSetsGraphView::outNeighboursLB(int a, vector<int> &nei){
+        SetVarGlbRanges i(outN[a]);
+        nei.clear();
+        while(i()){
+                for (int j=i.min(); j<=i.max(); ++j)
+                        nei.push_back(j);
+                ++i;
+        }
+
+}
+int OutAdjSetsGraphView::inDegreeUB(int a ){
+        int numNodes = outN.size();
+        int d=0;
+        for (int i=0 ; i<numNodes; i++){
+                if (arcIsInUB(i,a))
+                        d++;
+        }
+        return d;
+}
+
+
+int OutAdjSetsGraphView::inDegreeLB(int a ){
+        int numNodes = outN.size();
+        int d=0;
+        for (int i=0 ; i<numNodes; i++){
+                if (arcIsInLB(i,a)){ d++;}
+        }
+        return d;
+}
+
+int OutAdjSetsGraphView::outDegreeUB(int a ){
+        SetVarLubRanges i(outN[a]);
+        int d=0;
+        while(i()){
+                for (int j=i.min(); j<=i.max(); ++j){ d++;}
+                ++i;
+        }
+        return d;
+}
+int OutAdjSetsGraphView::outDegreeLB(int a ){
+        SetVarGlbRanges i(outN[a]);
+        int d=0;
+        while(i()){
+                for (int j=i.min(); j<=i.max(); ++j) {d++;}
+                ++i;
+        }
+        return d;
+}
+
+
+bool OutAdjSetsGraphView::assigned() const{
+        int numNodes = outN.size();
+        bool ass = nodes.assigned();
+        for (int i=0; i<numNodes && ass; i++)
+                ass &= outN[i].assigned();
+        return ass;
+}
+bool OutAdjSetsGraphView::nodeAssigned() const{
+        return nodes.assigned();
+}
+void OutAdjSetsGraphView::print(){
+        std::cout <<"########## Graph #########"<<endl;
+       std::cout <<"Nodes: "<< nodes<<endl;
+        for (int i=0; i<outN.size(); i++){
+                std::cout << i << ": " << outN[i] << endl;
+        }
+        std::cout <<"##########################"<<endl<<endl;
+}
+
+boost::tuple<vector<int>,vector<int>,vector<pair<int,int> >,vector<pair<int,int> > >
+OutAdjSetsGraphView::get_domain(){
+        //Return values
+        int numNodes = outN.size();
+        vector<int> nL;
+        vector<int> nU;
+        vector<pair<int,int> > aL;
+        vector<pair<int,int> > aU;
+        SetVarLubRanges nodesU(nodes);
+        Iter::Ranges::ToValues<SetVarLubRanges > nodesUV(nodesU);
+        for (;nodesUV();++nodesUV){
+                nU.push_back(nodesUV.val());
+        }
+        SetVarGlbRanges nodesL(nodes);
+        Iter::Ranges::ToValues<SetVarGlbRanges > nodesLV(nodesL);
+        for (;nodesLV();++nodesLV){
+                nL.push_back(nodesLV.val());
+        }
+        for (int tail=0; tail < numNodes; tail++){
+                SetVarLubRanges outNU(outN[tail]);
+                Iter::Ranges::ToValues<SetVarLubRanges > outNUV(outNU);
+                for (;outNUV();++outNUV){
+                        aU.push_back(make_pair(tail,outNUV.val()));
+                }
+                SetVarGlbRanges outNL(outN[tail]);
+                Iter::Ranges::ToValues<SetVarGlbRanges > outNLV(outNL);
+                for (;outNLV();++outNLV){
+                        aL.push_back(make_pair(tail,outNLV.val()));
+                }
+        }
+        return boost::make_tuple(nL,nU,aL,aU);
+}
+
+} }
+/**
+ * \brief Print graph variable view
+ * \relates Gecode::Graph::OutAdjSetsGraphView
+ * defined in the top-level namespace
+ */
+std::ostream&
+operator<<(std::ostream& os, const Gecode::Graph::OutAdjSetsGraphView& g){
+	
+        os <<"########## Graph #########"<<endl;
+        os <<"Nodes: "<< g.nodes<<endl;
+        for (int i=0; i<g.outN.size(); i++){
+                os << i << ": " << g.outN[i] << endl;
+        }
+        os <<"##########################"<<endl<<endl;
+        
+        return os;
+}

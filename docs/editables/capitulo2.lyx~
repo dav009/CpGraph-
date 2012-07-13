@@ -1,0 +1,3024 @@
+#LyX 1.5.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass book
+\begin_preamble
+\setcounter{section}{1}
+\end_preamble
+\language spanish
+\inputencoding auto
+\font_roman lmodern
+\font_sans default
+\font_typewriter default
+\font_default_family rmdefault
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\paperfontsize default
+\spacing single
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\leftmargin 3cm
+\topmargin 3cm
+\rightmargin 3cm
+\bottommargin 2cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Standard
+\begin_inset Note Note
+status collapsed
+
+\begin_layout Standard
+estado del arte
+\end_layout
+
+\begin_layout Standard
+.Que es gecode 
+\end_layout
+
+\begin_layout Standard
+-para que sirve gecode.
+ 
+\end_layout
+
+\begin_layout Standard
+.Que es cpgraph 
+\end_layout
+
+\begin_layout Standard
+.utilidad cpgraph.
+ 
+\end_layout
+
+\begin_layout Standard
+dominio de computacion de cpgraph- 
+\end_layout
+
+\begin_layout Standard
+restriccion del nucleo de cpgraph.
+ 
+\end_layout
+
+\begin_layout Standard
+restricciones globales de cpgraph.
+ e
+\end_layout
+
+\begin_layout Standard
+xpresividad de cpgraph
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Chapter
+Marco de Referencia
+\end_layout
+
+\begin_layout Standard
+El objetivo de éste capítulo es brindar el conocimiento necesario para entender
+ el área en general donde se ubica este proyecto que es Programación por
+ Restricciones y Matemáticas Discretas (particularmente teoría de grafos),
+  además se presenta parte del marco de conocimiento que Gregoire Dooms
+ contribuye en su documento de tesis para que el lector pueda entender la
+ representación teórica de los componentes más importantes de CP(Graph).
+\end_layout
+
+\begin_layout Section
+Programación por Restricciones
+\end_layout
+
+\begin_layout Subsection
+Concepto de Restricción
+\end_layout
+
+\begin_layout Standard
+Una restricción es una relación lógica entre variables, cada una de las
+ cuales toma un valor dado.
+\newline
+Por ejemplo, la pareja de variables X,  Y pueden
+ estar relacionadas por la restricción X < Y, las variables X, Y por si
+ solas no están relacionas pero al introducir la restricción < \InsetSpace ~
+se introduce
+ información que deben cumplir las variables, algo lógico es que una variable
+ pueda tomar un conjunto determinado de valores a esto se le denomina el
+ dominio de la variable
+\begin_inset LatexCommand cite
+key "key8"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Utilidad de Programación por Restricciones
+\end_layout
+
+\begin_layout Standard
+La Programación por Restricciones (CP o Constraint Programming,  en inglés)
+ trata del estudio de sistemas computacionales basados sobre restricciones.
+ La idea de la programación por restricciones es resolver problemas declarando
+ restricciones (condiciones o propiedades) las cuales deben ser satisfechas
+ por la solución
+\begin_inset LatexCommand cite
+key "key8"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Existen una gran cantidad de aplicaciones de Programación por Restricciones
+ dado la cantidad de problemas que involucran restricciones,  para más informaci
+ón
+\begin_inset LatexCommand cite
+key "key8"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Problemas de Satisfacción de Restricciones (CSPs)
+\end_layout
+
+\begin_layout Standard
+En Programación por Restricciones el modelamiento de problema se hace convirtien
+do la descripción del problema en un CSP(Problema De Satisfacción de Restriccion
+es o  Constraint Satisfaction Problem,  en inglés),  es decir identificando:
+\end_layout
+
+\begin_layout Itemize
+Las variables del problema.
+\end_layout
+
+\begin_layout Itemize
+El dominio de cada una de las variables del problema.
+\end_layout
+
+\begin_layout Itemize
+Las condiciones que deben cumplir los valores solución para las variables
+ que involucra el problema.
+\end_layout
+
+\begin_layout Standard
+De manera formal un CSP 
+\begin_inset Formula $P$
+\end_inset
+
+ se define como:
+\newline
+
+\newline
+
+\begin_inset Formula $P=<X_{s},D_{s},C_{s}>donde\, X_{s}={\left\{ X_{1}...X_{n}\right\} }$
+\end_inset
+
+ es el conjunto de variables.
+\newline
+
+\newline
+ 
+\begin_inset Formula $D_{s}$
+\end_inset
+
+ es el conjunto de dominios 
+\begin_inset Formula $D_{s}=<D_{1},D_{2}...D_{n}>$
+\end_inset
+
+ de tal forma que 
+\begin_inset Formula $X_{i}\epsilon D_{i}$
+\end_inset
+
+Siendo 
+\begin_inset Formula $U$
+\end_inset
+
+ el conjunto universal de todos los posibles valores.
+ Cada variable 
+\begin_inset Formula $X\epsilon X_{s}$
+\end_inset
+
+tiene un posible conjunto de valores 
+\begin_inset Formula $D(X)$
+\end_inset
+
+ 
+\begin_inset Formula $\subseteq$
+\end_inset
+
+ 
+\begin_inset Formula $U$
+\end_inset
+
+que puede ser asignado a la variable y el cual es llamado el dominio de
+ la variable.
+\newline
+
+\newline
+
+\begin_inset Formula $C_{s}=<C_{1},C_{2}....C_{t}>$
+\end_inset
+
+ es el conjunto de restricciones.
+ Una restricción 
+\begin_inset Formula $C_{j}$
+\end_inset
+
+ es una tupla 
+\begin_inset Formula $(R_{s_{j}},S_{j})$
+\end_inset
+
+ donde 
+\begin_inset Formula $R_{s_{j}}$
+\end_inset
+
+ es una relación sobre las variables 
+\begin_inset Formula $S_{j}$
+\end_inset
+
+,  donde 
+\begin_inset Formula $S_{i}=Scope(C_{i})$
+\end_inset
+
+ (el conjunto de las variables afectadas por la restricción).
+ Es decir 
+\begin_inset Formula $R_{i}$
+\end_inset
+
+ es un subconjunto del producto cartesiano de las variables en 
+\begin_inset Formula $S_{i}$
+\end_inset
+
+.
+\newline
+
+\newline
+Una solución al CSP 
+\begin_inset Formula $P$
+\end_inset
+
+ es una tupla 
+\begin_inset Formula $A=<a_{1},a_{2}...a_{n}>$
+\end_inset
+
+ donde 
+\begin_inset Formula $a_{i}\epsilon D_{i}$
+\end_inset
+
+ y cada 
+\begin_inset Formula $C_{j}$
+\end_inset
+
+ es satisfecho de tal forma que
+\begin_inset Formula $<a_{1},a_{2}...a_{n}>\epsilon\, C_{s}$
+\end_inset
+
+ 
+\begin_inset LatexCommand cite
+key "key3,key1,key2"
+
+\end_inset
+
+.
+\newline
+
+\end_layout
+
+\begin_layout Subsubsection
+Propiedades Importantes de Los CSPs
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Equivalencia:
+\series default
+ 
+\newline
+Considere una secuencia de Variables 
+\begin_inset Formula $X:=X_{1},.....,X_{n}$
+\end_inset
+
+ con una secuencia de dominios 
+\begin_inset Formula $D_{1},....D_{n}$
+\end_inset
+
+.Tome un elemento 
+\begin_inset Formula $d:=(d_{1},....,d_{n})$
+\end_inset
+
+ de 
+\begin_inset Formula $D_{1}$
+\end_inset
+
+
+\begin_inset Formula $x....xD_{n}$
+\end_inset
+
+y una subsecuencia 
+\begin_inset Formula $Y=X_{i_{1}}...X_{i_{l}}$
+\end_inset
+
+de 
+\begin_inset Formula $X$
+\end_inset
+
+.
+ Entonces se denota la secuencia 
+\begin_inset Formula $(d_{i_{1}},....,d_{i_{l}})$
+\end_inset
+
+como 
+\begin_inset Formula $d[Y]$
+\end_inset
+
+ y se lee como la proyección de 
+\begin_inset Formula $d$
+\end_inset
+
+ sobre 
+\begin_inset Formula $Y$
+\end_inset
+
+
+\begin_inset LatexCommand cite
+key "key2"
+
+\end_inset
+
+.
+\newline
+Con la proyección se define el primer concepto de equivalencia:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Sean dos CSPs nombrados respectivamente 
+\begin_inset Formula $P_{1}$
+\end_inset
+
+ y 
+\begin_inset Formula $P_{2}$
+\end_inset
+
+se consideran CSPs equivalentes si:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\{d[X]\,|\, d\; es\; una\; solucion\; a\; P_{1}\}=\{d[X]\,|\, d\; es\; una\; solucion\; a\; P_{2}\}$
+\end_inset
+
+
+\newline
+
+\newline
+El segundo concepto de equivalencia:
+\newline
+Considere los CSPs 
+\begin_inset Formula $P_{0}..P_{m}$
+\end_inset
+
+ donde 
+\begin_inset Formula $m\geq1$
+\end_inset
+
+ y una secuencia 
+\begin_inset Formula $X$
+\end_inset
+
+ de sus variables comunes.
+ Se dice que la unión de 
+\begin_inset Formula $P_{1}..P_{m}$
+\end_inset
+
+ es equivalente a 
+\begin_inset Formula $P_{0}$
+\end_inset
+
+ con respecto a 
+\begin_inset Formula $X$
+\end_inset
+
+ Si:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $\{d[X]\;|\; d\; es\; una\; solucion\; a\; P_{0}\}=\overset{m}{\bigcup_{i=1}}\{d[X]\;|\; d\; es\; una\; solucion\; a\; P_{i}\}.$
+\end_inset
+
+
+\newline
+
+\end_layout
+
+\begin_layout Standard
+Es decir un CSPs puede verse como la unión de muchos otros CSPs.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\series bold
+Consistencia:
+\series default
+ Un CSP es consistente o no fallido,  
+\newline
+Si 
+\begin_inset Formula $Soluciones(X,D,C)\neq\emptyset$
+\end_inset
+
+,  es decir si existe al menos una solución
+\begin_inset LatexCommand cite
+key "key2"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Existen varias representaciones en CSP de un mismo problema
+\begin_inset LatexCommand cite
+key "key2"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Un CSP esta resuelto,  si todas las restricciones han sido resultas y para
+ cada 
+\begin_inset Formula $X_{i}$
+\end_inset
+
+que pertenece a 
+\begin_inset Formula $X$
+\end_inset
+
+,  
+\begin_inset Formula $Dominio(X_{i})\neq\phi$
+\end_inset
+
+
+\begin_inset LatexCommand cite
+key "key2"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Resolviendo CSPs
+\end_layout
+
+\begin_layout Standard
+Una vez el CSP esta planteado se procede a encontrar su solución,  para
+ ello primeramente tiene que definirse si el CSP es consistente (Si existe
+ una solución),  en caso de que el CSP cumpla con la propiedad de Consistencia
+ el paso a seguir seria identificar a que tipo de solución se pretende llegar:
+\end_layout
+
+\begin_layout Itemize
+Encontrar una solución.
+\end_layout
+
+\begin_layout Itemize
+Encontrar todas las soluciones.
+\end_layout
+
+\begin_layout Itemize
+Encontrar la solución óptima.
+\end_layout
+
+\begin_layout Itemize
+Encontrar todas las soluciones óptimas\SpecialChar \@.
+
+\end_layout
+
+\begin_layout Standard
+Una vez definida la solución que se espera,  se escoge el método para llegar
+ a la solución.Existen métodos específicos y generales.
+ Los específicos son llamados Solucionadores de Restricciones (constraint
+ solvers,  en inglés)y se aplican en problemas con dominios específicos
+ y características específicas,  por ejemplo existen Solucionadores de Restricci
+ones para resolver problemas que involucran ecuaciones lineales,  problemas
+ de variables del dominio de los reales,  grafos,  entre otros
+\begin_inset LatexCommand cite
+key "key1,key2"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Una vez planteados el CSP
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+el tipo ..
+ no entiendo
+\end_layout
+
+\end_inset
+
+ y la solución a la que se pretende llegar,  empieza la resolución del CSP.
+\end_layout
+
+\begin_layout Enumerate
+En primera instancia un CSP inicial generara otros CSPs equivalentes al
+ CSP inicial,  al ser transformado por los propagadores y reglas de transformaci
+ón.
+ Los propagadores en la primera etapa podaran los dominios de las variables
+ según las reglas que le hayan sido especificadas.
+\end_layout
+
+\begin_layout Enumerate
+Una vez los propagadores han podado los dominios de las variables del CSP,
+ si no existe aun una solución,  el motor de búsqueda y la estrategia de
+ distribución se encargaran de explorar los dominios de una de las variables,
+  la estrategia de distribución (branching,  en inglés) define en cual orden
+ se exploran las variables ( e.g la variable con más restricciones,  la variable
+ con el dominio más pequeño, etcétera) y en qué orden serán asignados los
+ valores del dominio a esa variable ( e.g el valor más grande del dominio,
+  el valor más pequeño del dominio, etcétera).Esta exploración del árbol
+ y de los dominios de las variables genera nuevos CSPs equivalentes.
+\end_layout
+
+\begin_layout Enumerate
+Los propagadores podan los dominios de los nuevos CSPs equivalentes.
+\end_layout
+
+\begin_layout Enumerate
+Se itera entre el numeral 2 y numeral 3 explorando el árbol,  los dominios
+ de las variables y propagando.
+ Hasta que se encuentre una solución o el dominio de una de las variables
+ del CSP sea vació,  en caso tal no se ha encontrado una solución.
+\end_layout
+
+\begin_layout Subsection
+Propagadores (Filtering algorithms,  en inglés)
+\end_layout
+
+\begin_layout Standard
+Es un algoritmo que durante la búsqueda de las soluciones a un CSP,  se
+ encarga de reducir los dominios de las variables,  sin descartar soluciones
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\newline
+Un propagador siempre debe reducir el dominio,  por tanto debe cumplir con
+ las siguientes propiedades:
+\newline
+
+\newline
+Sea 
+\begin_inset Formula $f$
+\end_inset
+
+ un propagador asociado a la restricción 
+\begin_inset Formula $C$
+\end_inset
+
+.
+ 
+\begin_inset Formula $f$
+\end_inset
+
+ debe satisfacer que:
+\newline
+
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Contractante: 
+\series default
+
+\begin_inset Formula $f(D1)\subseteq D1$
+\end_inset
+
+
+\newline
+
+\end_layout
+
+\begin_layout Enumerate
+
+\series bold
+Correcto:
+\series default
+ 
+\begin_inset Formula $D1\cap C\subseteq f(D_{1})$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Un propagador convierte un CSP 
+\begin_inset Formula $P$
+\end_inset
+
+ en un 
+\begin_inset Formula $P'$
+\end_inset
+
+ de tal forma que sean CSPs equivalentes.
+\end_layout
+
+\begin_layout Subsection
+Modelo de Ejecución.
+\end_layout
+
+\begin_layout Standard
+Durante la búsqueda de las soluciones de un CSP se tiene que el espacio
+ de búsqueda son todos los posibles y potenciales valores que pueden tomar
+ las variables que involucra el CSP,  sin embargo explorar cada una de las
+ posibles combinaciones cuando se tiene un numero considerable de variables
+ es costoso en complejidad.
+ 
+\newline
+
+\end_layout
+
+\begin_layout Standard
+El algoritmo 1 muestra el flujo desde un alto nivel para la solución de
+ un CSP.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float algorithm
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+
+\series bold
+Solve
+\series default
+:
+\end_layout
+
+\begin_layout Standard
+Var continue: Boolean;
+\end_layout
+
+\begin_layout Standard
+continue 
+\begin_inset Formula $\leftarrow$
+\end_inset
+
+true;
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+while
+\series default
+ continue And Not Happy 
+\series bold
+do
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+Preprocess;
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+Constraint Propagation;
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+
+\series bold
+If
+\series default
+ Not Happy
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+
+\series bold
+then
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+
+\series bold
+if
+\series default
+ Atomic
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+
+\series bold
+then
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+continue 
+\begin_inset Formula $\leftarrow false$
+\end_inset
+
+
+\series bold
+;
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+
+\series bold
+else
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+Split;
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+Proceed By Cases;
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+
+\series bold
+end
+\end_layout
+
+\begin_layout Standard
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+\InsetSpace ~
+
+\series bold
+end
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+end
+\end_layout
+
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
+Procedimiento Solve(Representa el Ciclo Básico de Programación por Restricciones
+) 
+\begin_inset LatexCommand cite
+key "key2"
+
+\end_inset
+
+.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+El preprocesamiento hace referencia a que las restricciones y las variables
+ son transformadas a la forma sintáctica en que los propagadores y los algoritmo
+s pueden procesarlas.
+\end_layout
+
+\begin_layout Itemize
+"
+\shape italic
+Happy
+\shape default
+" significa que se ha llegado al objetivo esperado,  en este caso se recuerda
+ que el objetivo puede ser: encontrar todas las soluciones posibles,  solo
+ una solución o las soluciones óptimas entre otras.
+\end_layout
+
+\begin_layout Itemize
+Atómico hace referencia a que los dominios de todas las variables son unitarios.
+\end_layout
+
+\begin_layout Itemize
+La propagación de restricción (Constraint propagation,  en inglés) hace
+ referencia a generar CSPs equivalentes usando propagadores que recorten
+ de manera significativa los dominios de las variables.
+\end_layout
+
+\begin_layout Itemize
+La División (Slip, en inglés) hace referencia a partir el CSP 
+\begin_inset Formula $P$
+\end_inset
+
+ en subproblemas 
+\begin_inset Formula $P_{1},P_{2}...P_{n}$
+\end_inset
+
+ de tal forma de que 
+\begin_inset Formula $\bigcup_{1}^{n}P_{i}=P$
+\end_inset
+
+,  estos subproblemas son nuevos CSPs que partieron el dominio del CSP 
+\begin_inset Formula $P$
+\end_inset
+
+ inicial.
+ Es aquí cuando se explora el espacio de búsqueda y los potenciales valores
+ que pueden tomar las variables.
+\newline
+El Split es de vital importancia en la solución
+ del CSP,  pues se pueden definir diferentes maneras de explorar el dominio
+ de las variables,  la estrategia adoptada para la partición del dominio
+ o la manera en la que se explora el árbol de búsqueda es la Heurística
+ de Búsqueda.
+ Es elección del usuario escoger la Heurística que mejor se ajuste al problema
+ que desea atacar.
+\newline
+
+\newline
+La División se representa mediante reglas de la forma:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+\begin_inset Formula \[
+\dfrac{Guard}{Rule}\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Donde la guarda (guard,  en inglés) representa una expresión booleana que
+ debe cumplirse para que la regla sea aplicada.Algunas reglas usadas durante
+ el split son:
+\newline
+
+\newline
+Etiquetamiento (labeling,  en inglés)
+\series bold
+
+\begin_inset Formula \[
+\dfrac{X\epsilon\left\{ a_{1},...a_{k}\right\} }{X\epsilon\left\{ a_{1}\right\} \mid...\mid X\epsilon\left\{ a_{k}\right\} }\]
+
+\end_inset
+
+
+\series default
+
+\newline
+Bisección (bisection,  en inglés)
+\series bold
+
+\begin_inset Formula \[
+\dfrac{X\epsilon\left[a,b\right]}{X\epsilon\left[a,\frac{a+b}{2}\right]\mid X\epsilon\left[\frac{a+b}{2},b\right]}\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+La notación 
+\begin_inset Formula $\mid$
+\end_inset
+
+ indica que varios CSPs son generados.
+\newline
+
+\newpage
+
+\end_layout
+
+\begin_layout Section
+Teoría de Grafos
+\end_layout
+
+\begin_layout Standard
+Debido a que la base de este proyecto es restricciones sobre grafos y las
+ propiedades de los mismos,  es necesario por tanto entender los siguientes
+ conceptos
+\series bold
+:
+\end_layout
+
+\begin_layout Itemize
+
+\series bold
+Grafo Dirigido: 
+\series default
+
+\begin_inset Formula $Sea\; G$
+\end_inset
+
+ un grafo dirigido,  entonces 
+\begin_inset Formula $G=(V,E)$
+\end_inset
+
+ donde 
+\begin_inset Formula $V$
+\end_inset
+
+ es el conjunto de los vértices y 
+\begin_inset Formula $E$
+\end_inset
+
+ el conjunto de aristas.
+ Para una arista 
+\begin_inset Formula $(u,v)$
+\end_inset
+
+,  
+\begin_inset Formula $u$
+\end_inset
+
+ es llamado la cola (source o tail,  en inglés) y 
+\begin_inset Formula $v$
+\end_inset
+
+ es la cabeza (target o head,  en inglés)
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Vecinos de salida de vertice u: los vecinos de salida de un vértice u en
+ un grafo G=(V, E) es el conjunto de vértices en los cuales una arista proviene
+ de u:
+\begin_inset Formula $\left\{ v|\left(u,v\right)\in E\right\} $
+\end_inset
+
+
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Vecinos de entrada de vertice v: los vecinos de entrada de un vértice v
+ en el grafo G es el conjunto de vértices desde los cuales hay una arista
+ incidente en v: 
+\begin_inset Formula $\left\{ u|\left(u,v\right)\in E\right\} $
+\end_inset
+
+
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Grado de salida de vertice u: el grado de salida de un vertice u,  es el
+ numero de aristas de salida del vertice u
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Grado de entrada de vertice u: el grado de entrada de un vertice u,  es
+ el numero de aristas que inciden en el vertice u
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Simetría en grafos dirigidos: un grafo dirigido simétrico es un grafo en
+ el cual 
+\begin_inset Formula $\left(u,v\right)$
+\end_inset
+
+
+\begin_inset Formula $\in$
+\end_inset
+
+ E 
+\begin_inset Formula $\Longleftrightarrow$
+\end_inset
+
+ 
+\begin_inset Formula $\left(v,u\right)$
+\end_inset
+
+ 
+\begin_inset Formula $\in$
+\end_inset
+
+ E
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Circuito: Es una camino simple que empieza y termina en el mismo vértice
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Grafo acíclico dirigido: un grafo dirigido sin circuitos es llamado un grafo
+ acíclico dirigido (direct aciclic graph,  en el inglés)
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+
+\series bold
+Grafo No dirigido:
+\series default
+ 
+\begin_inset Formula $Sea\; G$
+\end_inset
+
+ un grafo no dirigido,  entonces 
+\begin_inset Formula $G=(V,E)$
+\end_inset
+
+,  donde V es el conjunto de vértices de G y E es el conjunto de aristas
+ de G .
+\newline
+En un grafo no dirigido sus aristas son conjuntos de dos nodos,  es
+ decir:
+\newline
+ 
+\begin_inset Formula $E\subseteq\left\{ \left\{ u,v\right\} \mid u\in V\,\wedge\,,v\in V\,\wedge\, u\neq v\right\} $
+\end_inset
+
+.
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Vecinos de vertice u: los vecinos de un vertice u es el conjunto de todos
+ los vértices que forman una
+\newline
+ arista con u: 
+\begin_inset Formula $\left\{ v|\left(u,v\right)\right\} \in E$
+\end_inset
+
+.Tales vértices se dice son adyacentes a u
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Grafo conectado: una grafo no dirigido es conectado si cada par de vértices
+ tiene un camino que los une
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Ciclo en un grafo: es una camino simple que empieza y termina en el mismo
+ vértice
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Subgrafo inducido de un grafo: G1 es un grafo inducido de G2,  si todas
+ las aristas de G2 inciden en vértices de G1 
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+ ejemplo:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graphics/inducesubgraph.jpeg
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Standard
+Subgrafo Inducido
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Grafo bipartito: un grafo simple es bipartito si su conjunto V de vértices
+ se puede dividir en dos conjuntos disyuntos (conjuntos sin nodos en común)
+ V1 y V2 tales que cada arista del grafo conecta un vertice de V1 con un
+ vertice de V2 
+\begin_inset LatexCommand cite
+key "key6"
+
+\end_inset
+
+ejemplo:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graphics/bipartitegraph.jpeg
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Standard
+Grafo Bipartito
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Grafo completo: el grafo completo de orden n es un grafo con n nodos donde
+ cada nodo esta conectado con los demás nodos.
+\end_layout
+
+\begin_layout Itemize
+Subgrafo: un subgrafo de un grafo 
+\begin_inset Formula $G=\left(V,E\right)$
+\end_inset
+
+es un grafo 
+\begin_inset Formula $H=\left(W,F\right)$
+\end_inset
+
+ donde 
+\begin_inset Formula $W\subseteq V$
+\end_inset
+
+ y 
+\begin_inset Formula $F\subseteq E$
+\end_inset
+
+ 
+\begin_inset LatexCommand cite
+key "key6"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Complemento de un grafo: el grafo complemento de un grafo 
+\begin_inset Formula $G=\left(V,E\right)$
+\end_inset
+
+ es un grafo Ḡ = (V,  Ē) el cual contiene todas las aristas las cuales
+ no están presentes en E: Ē = (V × V) 
+\backslash
+ E 
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Orden de un grafo: el numero de vértices que componen un grafo.
+\end_layout
+
+\begin_layout Itemize
+Tamaño de un grafo: el numero de aristas que componen un grafo.
+\end_layout
+
+\begin_layout Itemize
+Camino simple (path,  en inglés): una secuencia de vértices y aristas con
+ un vertice de inicio y fin en el cual no hay vértices repetidos 
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Camino ( walk,  en inglés): una secuencia de vértices y aristas con un vertice
+ de inicio y fin 
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Circuito: es una camino simple que empieza y termina en el mismo vértice
+ 
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Grafo Kneser:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+KG
+\begin_inset Formula $_{n,k}$
+\end_inset
+
+ es el grafo cuyos vértices corresponden a los subconjuntos de k-elementos
+ de un conjunto de n elementos,  y donde dos vértices están conectados si
+ y solo si los dos conjuntos correspondientes son disyuntos 
+\begin_inset LatexCommand cite
+key "key-2"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Ejemplos:
+\end_layout
+
+\begin_layout Enumerate
+El grafo completo de n vértices es el grafo Kneser KG
+\begin_inset Formula $_{n,1}$
+\end_inset
+
+
+\begin_inset Formula $.$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+Grafo Kneser KG
+\begin_inset Formula $_{5,2}$
+\end_inset
+
+
+\begin_inset Formula $.$
+\end_inset
+
+ 
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graphics/Kneser-5-2.svg
+	scale 30
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Standard
+Grafo de Kneser
+\begin_inset LatexCommand cite
+key "key-2"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\newpage
+
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Clausura transitiva de un grafo dirigido G: la clausura transitiva (transitive
+ closure,  en inglés) de un grafo dirigido 
+\begin_inset Formula $G\left(V,E\right)$
+\end_inset
+
+ es un grafo 
+\begin_inset Formula $G^{+}\left(V,E^{+}\right)$
+\end_inset
+
+ tal que 
+\begin_inset Formula $\left(u,v\right)$
+\end_inset
+
+ 
+\begin_inset Formula $\in E^{+}$
+\end_inset
+
+ si y solo si hay un camino de u a v en G 
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+, ejemplo: 
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graphics/transtiveclosure.jpeg
+	scale 40
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Standard
+Clausura Transitiva
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Dominio de Computación de CP(Graph)
+\end_layout
+
+\begin_layout Subsection
+Introducción
+\begin_inset LatexCommand cite
+key "introtocpgraph"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Esta sección enumera las restricciones disponibles en CP(Graph),  la representac
+iones de variables de grafos que se implementaron y otras generalidades
+ de CP(Graph).
+\newline
+Una variable del dominio de grafos toma valores de Grafos,
+  es decir el dominio de la variable es un conjunto de grafos.
+ Si se intentara enumerar todos los posibles grafos que existen en el dominio
+ de una variable de grafos el gasto en memoria seria excesivo,  para evitar
+ lo anterior se usan abstracciones.
+\end_layout
+
+\begin_layout Subsection
+Intervalo de Grafo
+\end_layout
+
+\begin_layout Standard
+El primer cuestionamiento al plantearse un framework que permita definir
+ restricciones sobre los grafos,  es la representación que van a tener los
+ grafos.
+ Existen diferentes enfoques al plantearse la pregunta 
+\begin_inset Quotes eld
+\end_inset
+
+
+\shape italic
+¿como representar una variable del dominio de los grafos?
+\shape default
+
+\begin_inset Quotes erd
+\end_inset
+
+.
+ Para la definición de las restricciones a nivel teórico,  el autor de CP(Graph)
+ planteo una sola representación genérica,  mientras que a nivel de implementaci
+on existen dos representaciones diferentes.
+\newline
+
+\end_layout
+
+\begin_layout Standard
+Sea 
+\begin_inset Formula $g$
+\end_inset
+
+ un grafo,  entonces 
+\begin_inset Formula $g=$
+\end_inset
+
+ 
+\begin_inset Formula $\left(sn,sa\right)\,$
+\end_inset
+
+ donde 
+\begin_inset Formula $sn$
+\end_inset
+
+ es el conjunto de nodos que compone el grafo,  
+\begin_inset Formula $sa$
+\end_inset
+
+ es el conjunto de aristas que posee el grafo y por tanto se tiene que:
+ 
+\begin_inset Formula $sa$
+\end_inset
+
+ 
+\begin_inset Formula $\subseteq sn\, x\, sn$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Dada la definición anterior la representación de variables del dominio de
+ grafos esta dada por un intervalo de grafos,  es decir:
+\end_layout
+
+\begin_layout Itemize
+un Least Upper Bound(
+\shape italic
+LUB
+\shape default
+) ( Cota Superior mas Pequeña): Es una cota superior que define el conjunto
+ superior de nodos y el conjunto superior de aristas,  es decir aquellos
+ nodos y aristas que 
+\series bold
+\shape italic
+podrían
+\series default
+\shape default
+ ser incluidos en el grafo.
+\end_layout
+
+\begin_layout Itemize
+Un Greatest Lower Bound (
+\shape italic
+GLB
+\shape default
+) (Cota Inferior mas Grande): Es una cota inferior que define el conjunto
+ inferior de nodos y el conjunto inferior de aristas,  es decir aquellos
+ nodos y aristas que se 
+\series bold
+\shape italic
+saben tienen
+\series default
+\shape default
+ que ser incluidos en el grafo.
+\end_layout
+
+\begin_layout Standard
+por tanto se tiene que si 
+\begin_inset Formula $G_{1}\subseteq G_{2}\;,[G_{1},G_{2}]$
+\end_inset
+
+ es un Intervalo de grafos.
+ De tal forma que representan un Intervalo de Grafos.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graphics/graphInterval.svg
+	scale 50
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Standard
+Intervalo de Grafo
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+En la Figura 6 el GLB (circulo verde) define los nodos y aristas obligatorios.
+ El LUB (circulo rojo) define las aristas y nodos que podrian ser incluidos
+ en el grafo.
+ El circulo gris determina el conjunto de grafos que son abstraídos por
+ el GLB y el LUB pero que no son enumerados.
+\end_layout
+
+\begin_layout Standard
+Si 
+\begin_inset Formula $G$
+\end_inset
+
+ es una variable del dominio de grafos,  se denota 
+\begin_inset Formula $dom(G)=[gL,gU]$
+\end_inset
+
+ con 
+\begin_inset Formula $gL=glb(G)$
+\end_inset
+
+ y 
+\begin_inset Formula $gU=lub(G)$
+\end_inset
+
+.
+ Si S es una variable de conjuntos finita,  se denota 
+\begin_inset Formula $dom(S)=[sL,sU]$
+\end_inset
+
+,  con 
+\begin_inset Formula $sL=glb(S)$
+\end_inset
+
+ y 
+\begin_inset Formula $sU=lub(S)$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Subsection
+Variables  en CP(Graph)
+\begin_inset LatexCommand label
+name "sub:Variables-Disponibles-En-CpGraph"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Para el modelamiento de problemas de grafos CP(Graph) ofrece dos alternativas
+ distintas para la representación de los grafos del problema.
+ El usar una u otra tiene impacto en la memoria y en el tiempo que toma
+ para la solución del problema.
+\end_layout
+
+\begin_layout Standard
+Las dos alternativas son: OutAdjSetsGraphView y NodeArcSetsGraphView.
+ En la figura a continuación se muestra la diferencia de modelamiento con
+ un ejemplo sencillo.
+ Para mas información revisar el capítulo 6.5.2 de 
+\begin_inset LatexCommand cite
+key "introtocpgraph"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graphics/viewConjuntos.svg
+	scale 60
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Caption
+
+\begin_layout Standard
+Representación de Grafos en CP(Graph)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Variables en CP(Graph)
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+CP(Graph) usa distintos tipos de variables,  entre estos están variables
+ de nodo,  variables de arista,  variables de conjuntos de aristas y variables
+ de conjuntos de nodos,  además se tiene para problemas relacionados con
+ pesos,  funciones que asignan a una arista un peso.
+\end_layout
+
+\begin_layout Standard
+La siguiente tabla resume los tipos de variables de CP(Graph) y sus característi
+cas más importantes:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="9" columns="5">
+<features>
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" width="0">
+<column alignment="center" valignment="top" leftline="true" rightline="true" width="0">
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Tipo de variable
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Representación
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Restricción
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Constantes
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Variable
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Integer
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+0, 1, 2...
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $i_{0},i_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $I_{0},I_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Node
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+0, 1, 2, ....
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $n_{0},n_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $N_{0},N_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Arc
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+(0, 1), (2, 4), ...
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $a_{0},a_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $A_{0},A_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Set
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ 0,1,2\right\} ,\left\{ 2,4\right\} $
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $s_{0},s_{1},....$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $S_{0},S_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Set of nodes
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ 2,3,4\right\} ,\left\{ 6,7\right\} $
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $sn_{0,}sn_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $SN_{0},SN_{1}$
+\end_inset
+
+, ...
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Set of arcs
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $\left\{ \left(0,3\right),\left(1,2\right)\right\} $
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $sa_{0,}sa_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $SA_{0},SA_{1}$
+\end_inset
+
+, ..
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Graph
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $\left(SN,SA\right)$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+SA
+\begin_inset Formula $\subseteq SNxSN$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $g{}_{0,}g{}_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $G{}_{0,}G{}_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row topline="true" bottomline="true">
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+Weight functions
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $N\cup A\rightarrow\mathbb{Z}$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $w{}_{0,}w{}_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Standard
+\begin_inset Formula $W{}_{0,}W{}_{1},...$
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Restricciones del Núcleo de CP(Graph)
+\end_layout
+
+\begin_layout Standard
+Las restricciones de grafos del núcleo de CP(Graph) definen un conjunto
+ de restricciones las cuales permiten expresar CSPs de grafos y nuevas restricci
+ones como una combinación de estas restricciones junto con restricciones
+ enteras y de conjuntos.
+ Estas restricciones enlazan variables de grafos con nodos,  aristas y conjuntos
+ de estas
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+Nodos
+\emph default
+(G, SN): esta restricción se cumple si los valores de la variable SN( un
+ conjunto de nodos) es igual al conjunto de nodos de la variable de grafo
+ G.
+ 
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+Arcs
+\emph default
+(G, SA): esta restricción se cumple si el valor de la variable SA(un conjunto
+ de arcos o aristas) es igual al conjunto de arcos de la variable de grafos
+ G.
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+ArcNode
+\emph default
+(A, N1, N2) esta restricción se cumple si el valor de la variable de arco
+ A es igual a el arco (N1, N2) donde N1 y N2 son variables nodo.
+ 
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+Adjacency(G)
+\emph default
+: esta restricción se cumple si el conjunto de aristas del grafo es igual
+ o un subconjunto de todas las aristas posibles que puede contener el grafo,
+  es decir si Arcs(G) 
+\begin_inset Formula $\subseteq$
+\end_inset
+
+ Nodes(G) × Nodes(G).
+\end_layout
+
+\begin_layout Standard
+La restricción 
+\emph on
+ArcNode
+\emph default
+ es independiente de las variables de grafos.Todos los grafos en un CSP en
+ CP(Graph) son subgrafos de el grafo universo de el CSP.Por lo tanto el mapeo
+ entre valores de variables nodo y variables arco codificado en la restricción
+ ArcNode es independiente de las variables de grafos.
+ Este necesita ser definido una vez para el grafo universo en el CSP.
+\end_layout
+
+\begin_layout Subsection
+Restricciones Globales de CP(Graph)
+\end_layout
+
+\begin_layout Standard
+Las restricciones globales de CP(Graph) se crean a partir de las restricciones
+ del núcleo de CP(Graph),  estas son:
+\end_layout
+
+\begin_layout Enumerate
+Restricciones binarias:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\emph on
+Subgraph
+\emph default
+(G1, G2): esta restricción se cumple si G1 es un subgrafo de G2.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Complement
+\emph default
+(G1, G2): esta restricción se cumple si G1 y G2 tienen el mismo conjunto
+ de nodos y cada arista del grafo completo construido sobre aquellos nodos
+ pertenece únicamente a uno de los dos grafos, si una arista esta en G1
+ esta no puede estar en G2,  de igual forma una arista en G2 no puede estar
+ en G1.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+InduceSubgraph
+\emph default
+(G1, G2): esta restricción se cumple si G1 es un grafo inducido de G2, 
+ es decir,  si todas las aristas de G2 inciden en vértices de G1 .
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Restricciones de Conexión:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\emph on
+Connected
+\emph default
+(G): esta restricción se cumple si G es un grafo no dirigido conectado,
+  es decir,  entre cada par de nodos hay un camino.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Restricciones para soportar grafos no dirigidos:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\emph on
+Symmetric
+\emph default
+(G): esta restricción se cumple si la relación de adyacencia es simétrica,
+  es decir,  que se puede verificar que si la arista (x, y) esta en G, 
+ entonces la arista (y, x) también esta en G.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Undirected
+\emph default
+(G,  Gu): esta restricción se cumple si Gu es el grafo no dirigido(simétrico)
+ obtenido de ignorar la dirección de las aristas de G.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Restricciones de no ciclos:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\emph on
+DAG
+\emph default
+(G): esta restricción se cumple si G es un grafo dirigido acíclico .Esta
+ restricción prohíbe cualquier circuito en G.
+ 
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Bipartite
+\emph default
+(G): esta restricción se cumple,  si un grafo es bipartito,  es decir, 
+ si y solo si su conjunto de nodos puede ser particionado en dos conjuntos
+ N1 y N2 tales que cada arista tiene su punto final en ambos conjunto: E
+ 
+\begin_inset Formula $\subseteq$
+\end_inset
+
+(N1 × N2) 
+\begin_inset Formula $\cup$
+\end_inset
+
+ (N2 × N1).
+ 
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Tree
+\emph default
+(T): esta restricción se cumple si T es un árbol no dirigido,  por ejemplo
+ un grafo conectado acíclico no dirigido.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Restricciones de peso:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\emph on
+Weight
+\emph default
+(G,  W,  I): esta restricción se cumple si I es el peso total asociado a
+ la variable de grafo G de acuerdo a la función de peso W.
+ 
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Restricciones de camino:
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+
+\emph on
+Path
+\emph default
+(G, N1, N2): esta restricción se cumple,  si G es un camino simple(es decir
+ un camino sin repetición de vértices),  de N1 a N2.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Path
+\emph default
+(G,  N1,  N2,  W,  I): esta restricción se cumple si G es un camino simple
+ de N1 a N2 cuyo peso total no es mas grande que I.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+Undirected
+\emph default
+ 
+\emph on
+Path
+\emph default
+(G, n1, n2): esta restricción se cumple si G es un camino simple no dirigido
+ desde n1 a n2.
+\end_layout
+
+\begin_layout Enumerate
+
+\emph on
+QuasiPath
+\emph default
+(G, n1, n2): esta restricción se cumple si cada nodo de G excepto n1,  n2
+ tienen grado 2.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Restricción de clausura transitiva(transitive closure,  en inglés):
+\end_layout
+
+\begin_deeper
+\begin_layout Enumerate
+TC
+\begin_inset Formula $\left(G,G^{+}\right)=$
+\end_inset
+
+esta restricción se cumple si G
+\begin_inset Formula $^{+}$
+\end_inset
+
+ es la clausura transitiva de G.
+\end_layout
+
+\end_deeper
+\begin_layout Subsection
+Expresividad de CP(Graph)
+\end_layout
+
+\begin_layout Standard
+La investigación de un dominio de grafos en Programación por Restricciones,
+  es decir,  el desarrollo de CP(Graph),  fue iniciada por un problema en
+ análisis de redes bioquímicas,  en este capítulo se pretende informar sobre
+ el problema y mostrar como se soluciona en CP(Graph),  adicionalmente se
+ explica otro problema de grafos que pueden se resuelto utilizando las restricci
+ones de CP(Graph).
+\end_layout
+
+\begin_layout Subsubsection
+Aplicación en Recuperación de Secuencias de Reacciones
+\newline
+(Pathways,  en inglés)
+ Metabólicas.
+\end_layout
+
+\begin_layout Standard
+El metabolismo es un conjunto de reacciones químicas que ocurren en los
+ organismos vivos con el fin de mantener la vida,  las reacciones químicas
+ del metabolismo son organizadas en secuencias de reacciones
+\emph on
+ 
+\emph default
+metabólicas en las cuales un químico es convertido en otro,  estas redes
+ están compuestas de cientos de nodos los cuales son de dos tipos: compuestos
+ y reacciones .
+\newline
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Redes Metabólicas
+\series default
+
+\newline
+Las Redes Metabolicas están compuestas de entidades bioquímicas (compuestos)
+ que participan en reacciones,  tales entidades bioquímicas dependiendo
+ de su papel pueden ser vistas como sustratos o productos
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\newline
+En la Figura 2.8,  se tiene una pequeña red metabólica en donde los compuestos
+ están dentro de los círculos y las reacciones dentro de los rectángulos,
+  Pyruvate (compuesto) es un sustrato ya que entra a la reacción 4.2.1.52 y
+ dihydrodipicolinic acid(compuesto) es un producto ya que es producido por
+ la reacción.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Standard
+
+\end_layout
+
+\begin_layout Standard
+\align center
+\begin_inset Graphics
+	filename graphics/metabolicaRed.jpg
+	scale 55
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Standard
+Pequeña Red Metabólica 
+\begin_inset LatexCommand cite
+key "key-14"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Las redes metabólicas pueden ser modeladas como un grafo dirigido bipartito
+ cuyos nodos son las entidades bioquímicas y reacciones y cuyas aristas
+ enlazan entidades y reacciones.
+\newline
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Secuencia De Reacciones
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Una secuencia de reacciones (pathway,  en inglés) son subconjuntos específicos
+ de una red metabólica los cuales son identificados como procesos funcionales
+ de la célula, éstas pueden ser usadas para estudiar redes metabólicas.Como
+ la mayoría de secuencias de reacciones tiene una estructura linear,  un
+ tipo de análisis de red metabólica consiste en encontrar caminos simples
+ en un grafo metabólico.
+\end_layout
+
+\begin_layout Standard
+En CP(Graph),  se usa Programación por Restricciones para resolver problemas
+ de búsqueda de caminos simples restringidos.El tipo general de análisis
+ hecho con CP(Graph) consiste en una recuperación de secuencias de reacciones
+ por búsqueda de subgrafo restringidos.
+\end_layout
+
+\begin_layout Paragraph
+Configuración Previa a la Usada en CP(Graph)
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+
+\newline
+
+\end_layout
+
+\begin_layout Standard
+Para entender el modelo planteado por Gregoire Dooms para éste problema
+ es importante explicar de manera somera la configuración en la que el se
+ baso, es decir,  que extendió.La primera configuración consistía en buscar
+ el camino simple más corto punto a nodo a nodo en un grafo modelando la
+ red bioquímica; esto puede ser hecho usando búsqueda primero en profundidad.Un
+ problema en esta aproximación es que existen moléculas altamente conectadas
+ como H
+\begin_inset Formula $_{2}$
+\end_inset
+
+O mostrada en la figura 6,  las cuales generan gran cantidad de caminos
+ que no corresponden a secuencias de reacciones reales .Una solución propuesta
+ es remover estos nodos del grafo antes de realizar la búsqueda del camino
+ simple.Un nuevo problema es entonces que algunas secuencias de reacciones,
+  tales como glycolisis,  usan algunos de estas moléculas como intermedios.Para
+ reducir la posibilidad de seleccionar estos nodos mientras permiten seleccionar
+los,  cada nodo tiene asignado un peso proporcional a su grado.Un grupo de
+ metabolitos tiene un grado muy alto así que son menos probables de seleccionar
+ en el camino simple más corto.Este problema requiere un algoritmo de camino
+ simple más corto positivo tal como Dijkstra.
+\newline
+
+\end_layout
+
+\begin_layout Standard
+La tasa de recuperación de secuencias de reacciones correctas debería ser
+ incrementada: algunos caminos simples van a través de una reacción y su
+ reacción inversa.
+ Esta pareja de reacciones inversas modelan la reacción desde sustratos
+ para producir y desde productos para sustraer.La mayoría del tiempo,  estas
+ reacciones son observadas en una sola dirección en cada especie.
+ Por lo tanto caminos simples que contengan ambas reacciones deberían ser
+ excluidas del conjunto resultado.
+\end_layout
+
+\begin_layout Paragraph
+Configuración Usada en CP(Graph)
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+
+\newline
+
+\end_layout
+
+\begin_layout Standard
+El modelo extiende la configuración anterior y agrega nodos obligatorios
+ en el camino simple.
+\end_layout
+
+\begin_layout Standard
+Sea n
+\begin_inset Formula $_{1},.....n_{m}$
+\end_inset
+
+los nodos obligatorios incluidas las reacciones (r
+\begin_inset Formula $_{i1}$
+\end_inset
+
+, r
+\begin_inset Formula $_{i2}$
+\end_inset
+
+) 1
+\begin_inset Formula $\leq i\leq t$
+\end_inset
+
+ las parejas mutuamente exclusivas de reacciones,  el CSP es: 
+\newline
+Minimizar
+ Weight
+\begin_inset Formula $\left(G,w\right)$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+sujeto a:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $Subgraph\left(G,g\right)\wedge Path(G,n_{1},n_{m})$
+\end_inset
+
+
+\begin_inset Formula $\wedge\forall i$
+\end_inset
+
+ 
+\begin_inset Formula $\in\left[1,m\right]:n_{i}\in Nodes(G)\wedge\forall i$
+\end_inset
+
+
+\begin_inset Formula $\in\left[1,t\right]:r_{i1}\notin Nodes(G)\vee$
+\end_inset
+
+r
+\begin_inset Formula $_{i2}\notin Nodes(G)$
+\end_inset
+
+ 
+\newline
+El problema de optimización presentado se resuelve usando una heurística
+ first fail
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+revisar traducción al español
+\end_layout
+
+\end_inset
+
+ para búsqueda de caminos.Esta heurística selecciona el nodo con el más bajo
+ grado de salida y escoge la arista de salida la cual maximiza el grado
+ de entrada del el nodo al que apunta(targe node,  en inglés).
+ Este problema es resuelto para las tres secuencias metabólicas lineares
+ más largas: lysine,  glycolysis y heme.
+ Todos los nodos que son reacciones son obligatorios.El peso de cada nodo
+ es su grado.Cada reacción es doblada y su reacción inversa es mutuamente
+ exclusiva (no puede aparecer dentro del mismo camino).
+\end_layout
+
+\begin_layout Subsubsection
+Problema del Recorrido del Caballo
+\newline
+
+\end_layout
+
+\begin_layout Standard
+Este es otro problema que es posible resolver usando las restricciones de
+ CP(Graph),  el problema consiste en a partir de las movidas (saltos) del
+ caballo (en L) en un ajedrez,  encontrar un camino que recorra todos los
+ cuadros del ajedrez exactamente una vez.Éste es un ejemplo del problema
+ del camino hamiltoniano sobre un tipo especial de grafo llamado Grafo del
+ Caballo
+\begin_inset LatexCommand cite
+key "key1"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Un modelo de CP(Graph) simple para el recorrido del caballo es: 
+\newline
+Sea KG
+\begin_inset Formula $_{8,8}$
+\end_inset
+
+\InsetSpace ~
+el grafo del caballo para un tablero cuadrado de 8 x 8 cuadros.Este grafo
+ se compone de un nodo para cada cuadro de el tablero de ajedrez y aristas
+ conectando cada pareja de cuadros los cuales pueden ser enlazados por una
+ movida del caballo.Sea n
+\begin_inset Formula $_{0,0}$
+\end_inset
+
+ un cuadro ubicado en la esquina superior izquierda del tablero y n
+\begin_inset Formula $_{1,2}$
+\end_inset
+
+la ubicación que resulta de una movida del caballo desde n
+\begin_inset Formula $_{0,0}$
+\end_inset
+
+,  \InsetSpace ~
+el problema es:
+\end_layout
+
+\begin_layout Standard
+Subgraph(G,  KG
+\begin_inset Formula $_{8,8}$
+\end_inset
+
+) 
+\begin_inset Formula $\wedge$
+\end_inset
+
+ Nodes(KG
+\begin_inset Formula $_{8,8}$
+\end_inset
+
+) = Nodes(G) 
+\begin_inset Formula $\wedge$
+\end_inset
+
+ Path(G,  n0, 0,  n1, 2) 
+\end_layout
+
+\end_body
+\end_document
